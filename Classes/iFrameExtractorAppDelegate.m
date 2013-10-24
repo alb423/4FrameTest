@@ -23,11 +23,25 @@
 #import "VideoFrameExtractor.h"
 #import "Utilities.h"
 
+#define PLAY_MEMORY_FILE 1
+#define PLAY_REMOTE_FILE 2
+#define PLAY_MEHTOD PLAY_REMOTE_FILE
 
+#if PLAY_MEHTOD == PLAY_MEMORY_FILE
 #define VIDEO_SRC1 @"7h800.mp4"
 #define VIDEO_SRC2 @"7h800-2.mp4"
 #define VIDEO_SRC3 @"7h800-3.mp4"
 #define VIDEO_SRC4 @"7h800-4.mp4"
+#else
+// "rtsp://mm2.pcslab.com/mm/7h800.mp4"
+
+#define VIDEO_SRC1 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
+#define VIDEO_SRC2 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
+#define VIDEO_SRC3 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
+#define VIDEO_SRC4 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
+#endif
+
+
 //#define VIDEO_SRC @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
 //#define VIDEO_SRC @"rtsp://quicktime.tc.columbia.edu:554/users/lrf10/movies/sixties.mov"
 
@@ -132,9 +146,12 @@ NSMutableArray *myImage;
 	[imageView3 setTransform:CGAffineTransformMakeRotation(M_PI/2)];
     [imageView4 setTransform:CGAffineTransformMakeRotation(M_PI/2)];
     
-    //self.video1 = [[VideoFrameExtractor alloc] initWithVideo:[Utilities bundlePath:VIDEO_SRC2]];
-    self.video1 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC2]];
-    [video1 release];
+#if PLAY_MEHTOD == PLAY_MEMORY_FILE
+    self.video1 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+#else
+    self.video1 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC1];
+#endif
+        [video1 release];
     
     // set output image size
     if(vRtspNum==1)
@@ -150,8 +167,13 @@ NSMutableArray *myImage;
         [imageView2 setTransform:CGAffineTransformMakeRotation(M_PI*2)];
         ScreenHeight=426;
         ScreenWidth=320;
-        //self.video2 = [[VideoFrameExtractor alloc] initWithVideo:[Utilities bundlePath:VIDEO_SRC2]];
-        self.video2 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC2]];        
+        
+#if PLAY_MEHTOD == PLAY_MEMORY_FILE
+        self.video2 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC2]];
+#else
+        self.video2 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC2];
+#endif
+  
 //        video1.outputWidth = ScreenHeight/2;
 //        video1.outputHeight = ScreenWidth;
 //        video2.outputWidth = ScreenHeight/2;
@@ -166,13 +188,17 @@ NSMutableArray *myImage;
     {
         ScreenHeight=426;
         ScreenWidth=320;
+
+#if PLAY_MEHTOD == PLAY_MEMORY_FILE
         self.video2 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC2]];
-        self.video3 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC2]];
-        self.video4 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC2]];
-        
-//        self.video2 = [[VideoFrameExtractor alloc] initWithVideo:[Utilities bundlePath:VIDEO_SRC2]];
-//        self.video3 = [[VideoFrameExtractor alloc] initWithVideo:[Utilities bundlePath:VIDEO_SRC3]];
-//        self.video4 = [[VideoFrameExtractor alloc] initWithVideo:[Utilities bundlePath:VIDEO_SRC4]];
+        self.video3 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC3]];
+        self.video4 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC4]];
+#else
+        self.video2 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC2];
+        self.video3 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC3];
+        self.video4 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC4];
+#endif
+
         video1.outputWidth = ScreenHeight/2;//426;
         video1.outputHeight = ScreenWidth/2; // 320
         video2.outputWidth = ScreenHeight/2;//426;

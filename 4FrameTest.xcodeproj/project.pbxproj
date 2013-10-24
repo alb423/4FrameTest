@@ -246,6 +246,11 @@
 			isa = PBXProject;
 			attributes = {
 				LastUpgradeCheck = 0460;
+				TargetAttributes = {
+					1D6058900D05DD3D006BFB54 = {
+						DevelopmentTeam = V89796HXWH;
+					};
+				};
 			};
 			buildConfigurationList = C01FCF4E08A954540054247B /* Build configuration list for PBXProject "4FrameTest" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -314,7 +319,7 @@
 				"ARCHS[sdk=*]" = "$(ARCHS_STANDARD_32_BIT)";
 				CODE_SIGN_ENTITLEMENTS = "";
 				"CODE_SIGN_ENTITLEMENTS[sdk=*]" = "";
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "iPhone Developer: kuo hsun Liao (LW6ABB7S99)";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				"CODE_SIGN_RESOURCE_RULES_PATH[sdk=*]" = "";
 				COPY_PHASE_STRIP = NO;
@@ -324,7 +329,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = 4FrameTest_Prefix.pch;
 				HEADER_SEARCH_PATHS = "";
-				"HEADER_SEARCH_PATHS[arch=armv7]" = "\"$(SRCROOT)/ffmpeg/compiled/armv7/include\"";
+				"HEADER_SEARCH_PATHS[arch=armv7]" = "\"$(SRCROOT)/ffmpeg/compiled/armv7-neon/include\"";
 				"HEADER_SEARCH_PATHS[sdk=iphonesimulator*]" = "\"$(SRCROOT)/ffmpeg/compiled/i386/include\"";
 				INFOPLIST_FILE = "4FrameTest-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
@@ -332,7 +337,7 @@
 				LIBRARY_SEARCH_PATHS = "";
 				"LIBRARY_SEARCH_PATHS[arch=armv7]" = (
 					"$(inherited)",
-					"\"$(SRCROOT)/ffmpeg/compiled/armv7/lib\"",
+					"\"$(SRCROOT)/ffmpeg/compiled/armv7-neon/lib\"",
 				);
 				"LIBRARY_SEARCH_PATHS[sdk=iphonesimulator*]" = (
 					"$(inherited)",
@@ -341,6 +346,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				"OTHER_CODE_SIGN_FLAGS[sdk=*]" = "";
 				PRODUCT_NAME = "rtsp-home";
+				PROVISIONING_PROFILE = "";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -351,7 +357,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CODE_SIGN_ENTITLEMENTS = "";
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "iPhone Developer: kuo hsun Liao (LW6ABB7S99)";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -363,6 +369,7 @@
 				LIBRARY_SEARCH_PATHS = "";
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "rtsp-home";
+				PROVISIONING_PROFILE = "";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
 			};

@@ -193,13 +193,20 @@ initError:
     // Register all formats and codecs
     avcodec_register_all();
     av_register_all();
-	
+    avformat_network_init();
+    
     // Open video file
-    if(avformat_open_input(&pFormatCtx, [moviePath cStringUsingEncoding:NSASCIIStringEncoding], NULL, NULL) != 0) {
-        av_log(NULL, AV_LOG_ERROR, "Couldn't open file\n");
+    AVDictionary *opts = 0;
+    //int ret = av_dict_set(&opts, "rtsp_transport", "tcp", 0);
+    av_dict_set(&opts, "rtsp_transport", "tcp", 0);
+    
+    if(avformat_open_input(&pFormatCtx, [moviePath cStringUsingEncoding:NSASCIIStringEncoding], NULL, &opts) != 0) {
+        av_log(NULL, AV_LOG_ERROR, "Couldn't open file %s\n", [moviePath cStringUsingEncoding:NSASCIIStringEncoding]);
         goto initError;
     }
-	
+	av_dict_free(&opts);
+    
+	   
     // Retrieve stream information
     if(avformat_find_stream_info(pFormatCtx,NULL) < 0) {
         av_log(NULL, AV_LOG_ERROR, "Couldn't find stream information\n");
@@ -231,6 +238,7 @@ initError:
     // Allocate video frame
     pFrame = avcodec_alloc_frame();
 			
+    av_dump_format(pFormatCtx, 0, [moviePath cStringUsingEncoding:NSASCIIStringEncoding], 0);
 	outputWidth = pCodecCtx->width;
 	self.outputHeight = pCodecCtx->height;
 			

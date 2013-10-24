@@ -7,6 +7,20 @@
       buildImplicitDependencies = "YES">
       <BuildActionEntries>
          <BuildActionEntry
+            buildForTesting = "NO"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "1D6058900D05DD3D006BFB54"
+               BuildableName = "rtsp-home.app"
+               BlueprintName = "iFrameExtractor"
+               ReferencedContainer = "container:iFrameExtractor.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
             buildForTesting = "YES"
             buildForRunning = "YES"
             buildForProfiling = "YES"
@@ -16,8 +30,8 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "1D6058900D05DD3D006BFB54"
                BuildableName = "rtsp-home.app"
-               BlueprintName = "iFrameExtractor"
-               ReferencedContainer = "container:iFrameExtractor.xcodeproj">
+               BlueprintName = "4FrameTest"
+               ReferencedContainer = "container:4FrameTest.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -53,8 +67,8 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "1D6058900D05DD3D006BFB54"
             BuildableName = "rtsp-home.app"
-            BlueprintName = "iFrameExtractor"
-            ReferencedContainer = "container:iFrameExtractor.xcodeproj">
+            BlueprintName = "4FrameTest"
+            ReferencedContainer = "container:4FrameTest.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <AdditionalOptions>
