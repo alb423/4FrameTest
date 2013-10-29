@@ -29,8 +29,8 @@
 @interface VideoFrameExtractor : NSObject {
     
 	AVFormatContext *pFormatCtx;
-	AVCodecContext *pCodecCtx;
-    AVFrame *pFrame;
+//	AVCodecContext *pCodecCtx;
+//    AVFrame *pFrame;
     AVPacket packet;
 	AVPicture picture;
 	int videoStream;
@@ -46,10 +46,13 @@
     GLuint _texcoordVBO;
     GLuint _indexVBO;
     
+@public
+    AVCodecContext *pCodecCtx;
+    AVFrame *pFrame;
 }
 
 /* Last decoded picture as UIImage */
-@property (nonatomic, readonly) UIImage *currentImage;
+@property (weak, nonatomic, readonly) UIImage *currentImage;
 
 /* Size of video frame */
 @property (nonatomic, readonly) int sourceWidth, sourceHeight;
@@ -62,7 +65,7 @@
 
 /* Current time of video in seconds */
 @property (nonatomic, readonly) double currentTime;
-
+@property (nonatomic, readonly) double fps;
 //@property (nonatomic, readonly)   GLuint _program;
 //@property (nonatomic, readonly)   GLuint _positionVBO;
 //@property (nonatomic, readonly)   GLuint _texcoordVBO;

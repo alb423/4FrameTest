@@ -22,6 +22,7 @@
 #import "iFrameExtractorAppDelegate.h"
 #import "VideoFrameExtractor.h"
 #import "Utilities.h"
+#import "MyGLView.h"
 
 #define PLAY_MEMORY_FILE 1
 #define PLAY_REMOTE_FILE 2
@@ -35,17 +36,25 @@
 #else
 // "rtsp://mm2.pcslab.com/mm/7h800.mp4"
 
-#define VIDEO_SRC1 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
-#define VIDEO_SRC2 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
-#define VIDEO_SRC3 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
-#define VIDEO_SRC4 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
+//
+
+//#define VIDEO_SRC1 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
+//#define VIDEO_SRC2 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
+//#define VIDEO_SRC3 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
+//#define VIDEO_SRC4 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
+
+#define VIDEO_SRC1 @"rtsp://210.65.250.18:80/cam000b67014ff4001/20131025/094606.mp4"
+#define VIDEO_SRC2 @"rtsp://210.65.250.18:80/cam000b67014ff4001/20131025/094606.mp4"
+#define VIDEO_SRC3 @"rtsp://210.65.250.18:80/cam000b67014ff4001/20131025/094606.mp4"
+#define VIDEO_SRC4 @"rtsp://210.65.250.18:80/cam000b67014ff4001/20131025/094606.mp4"
+
 #endif
 
 
 //#define VIDEO_SRC @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
 //#define VIDEO_SRC @"rtsp://quicktime.tc.columbia.edu:554/users/lrf10/movies/sixties.mov"
 
-//#define _OPENGL_WITH_FFMPEG_ 0
+//#define RENDER_BY_OPENGLES 1
 
 @implementation iFrameExtractorAppDelegate
 int vRtspNum = 1;
@@ -60,24 +69,8 @@ float vShowImageTime = 0.0;
 int vDisplayCount = 0;
 NSMutableArray *myImage;
 
-@synthesize window, imageView, imageView2, imageView3, imageView4, label, DecodeLabel, ShowImageLabel, playButton, video1, video2, video3, video4;
+@synthesize window, imageView, imageView2, imageView3, imageView4, label, DecodeLabel, ShowImageLabel, playButton, video1, video2, video3, video4, FPS;
 
-- (void)dealloc {
-	[video1 release];
-	[video2 release];
-	[video3 release];
-	[video4 release];
-	[label release];
-	[playButton release];
-    [window release];
- 	[imageView release];   
-    [imageView2 release];
-    [imageView3 release];
-    [imageView4 release];
-    [DecodeLabel release];
-    [ShowImageLabel release];
-    [super dealloc];
-}
 
 -(void)applicationDidEnterBackground:(UIApplication *)application
 {
@@ -89,13 +82,8 @@ NSMutableArray *myImage;
 
 - (void)applicationDidFinishLaunching:(UIApplication *)application {    
     isStop = 0;
+    FPS = 30;
     
-#ifdef _OPENGL_WITH_FFMPEG_ // Test for shaders
-    glView.animationInterval = 1.0 / 60.0;
-	[glView startAnimation];
-
-    [self.window makeKeyAndVisible];
-#else
     
 	//self.video2 = [[VideoFrameExtractor alloc] initWithVideo:[Utilities bundlePath:@"rtsp://quicktime.tc.columbia.edu:554/users/lrf10/movies/sixties.mov"]];
     //self.video1 = [[VideoFrameExtractor alloc] initWithVideo:[Utilities bundlePath:@"22.5b67a4e4e5508f98.mp4"]];
@@ -106,24 +94,108 @@ NSMutableArray *myImage;
 
 
     [window makeKeyAndVisible];
-#endif    
 }
 
+#ifdef RENDER_BY_OPENGLES // Test for shaders
 -(IBAction)playButtonAction:(id)sender {
 	[playButton setEnabled:NO];
     isStop = 0;
     
-#ifdef _OPENGL_WITH_FFMPEG_
-
-    [glView initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC2]];
-    [glView getFrame];
-    
-#else
-	lastFrameTime = -1;
-
     int ScreenHeight=960;
     int ScreenWidth=640;
     
+	[playButton setEnabled:NO];
+    isStop = 0;
+
+    UIButton *vBn = (UIButton *)sender;
+    if([vBn.currentTitle isEqualToString:@"1"])
+    {
+        vRtspNum=1;
+#if PLAY_MEHTOD == PLAY_MEMORY_FILE
+        self.video1 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+#else
+        self.video1 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC1];
+#endif
+        [video1 seekTime:0.0];
+    }
+    else if([vBn.currentTitle isEqualToString:@"2"])
+    {
+        vRtspNum=2;
+#if PLAY_MEHTOD == PLAY_MEMORY_FILE
+        self.video1 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        self.video2 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC2]];
+#else
+        self.video1 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC1];
+        self.video2 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC2];
+#endif
+        [video1 seekTime:0.0];
+        [video2 seekTime:0.0];
+    }
+    else
+    {
+        vRtspNum=4;
+#if PLAY_MEHTOD == PLAY_MEMORY_FILE
+        self.video1 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        self.video2 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC2]];
+        self.video3 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC3]];
+        self.video4 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC4]];
+#else
+        self.video1 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC1];
+        self.video2 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC2];
+        self.video3 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC3];
+        self.video4 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC4];
+#endif
+        [video1 seekTime:0.0];
+        [video2 seekTime:0.0];
+        [video3 seekTime:0.0];
+        [video4 seekTime:0.0];
+    }
+    
+    // The bound should be assigned to the same size of screen
+    //CGRect vBound = self.window.bounds;
+    
+    // The size should be set according the video size
+    ScreenHeight = 720;
+    ScreenWidth = 1280;
+
+
+    CGRect vBound;
+    vBound.origin.x = self.window.bounds.origin.x;
+    vBound.origin.y = self.window.bounds.origin.y;
+    vBound.size.width=self.window.bounds.size.width;
+    vBound.size.height=self.window.bounds.size.height;
+    
+    
+    myGLView = [[MyGLView alloc] initWithFrame:vBound frameWidth:ScreenWidth frameHeight:ScreenHeight];
+
+    //[myGLView setTransform:CGAffineTransformMakeRotation(M_PI/2)];
+    //[self.window addSubview:myGLView];
+    [self.window insertSubview:myGLView atIndex:0];
+
+    NSLog(@"RTSPNUM=%d", vRtspNum);
+    {
+        [NSTimer scheduledTimerWithTimeInterval:1.0/self.FPS
+                                         target:self
+                                       selector:@selector(displayNextFrame:)
+                                       userInfo:nil
+                                        repeats:YES];
+    }
+    
+}
+
+#else
+-(IBAction)playButtonAction:(id)sender {
+
+    isStop = 0;
+    
+    int ScreenHeight=960;
+    int ScreenWidth=640;
+    
+	[playButton setEnabled:NO];
+    isStop = 0;
+    
+	lastFrameTime = -1;
+
     UIButton *vBn = (UIButton *)sender;
     NSLog(@"playButton.currentTitle=%@", vBn.currentTitle);
     imageView.image = nil;
@@ -151,7 +223,6 @@ NSMutableArray *myImage;
 #else
     self.video1 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC1];
 #endif
-        [video1 release];
     
     // set output image size
     if(vRtspNum==1)
@@ -173,11 +244,6 @@ NSMutableArray *myImage;
 #else
         self.video2 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC2];
 #endif
-  
-//        video1.outputWidth = ScreenHeight/2;
-//        video1.outputHeight = ScreenWidth;
-//        video2.outputWidth = ScreenHeight/2;
-//        video2.outputHeight = ScreenWidth;
         
         video1.outputWidth = ScreenWidth;
         video1.outputHeight = ScreenHeight/2;
@@ -207,9 +273,6 @@ NSMutableArray *myImage;
         video3.outputHeight = ScreenWidth/2;
         video4.outputWidth = ScreenHeight/2;//426;
         video4.outputHeight = ScreenWidth/2;
-        [video2 release];
-        [video3 release];
-        [video4 release];
     }
 
     
@@ -264,22 +327,28 @@ NSMutableArray *myImage;
 	   [video4 seekTime:0.0];
     }
     
+    // TODO: mark me
+    self.FPS = video1.fps;
+    if(self.FPS==0) self.FPS=30;
+    
     NSLog(@"RTSPNUM=%d", vRtspNum);
     {
-	  [NSTimer scheduledTimerWithTimeInterval:1.0/30
-									 target:self
-								   selector:@selector(displayNextFrame:)
-								   userInfo:nil
-									repeats:YES];
+        [NSTimer scheduledTimerWithTimeInterval:1.0/self.FPS
+                                         target:self
+                                       selector:@selector(displayNextFrame:)
+                                       userInfo:nil
+                                        repeats:YES];
     }
-#endif
+    
 }
+#endif
+
 
 - (void) updateUI_1
 {
     
     vDisplayCount++;
-    if(vDisplayCount==30)
+    if(vDisplayCount==self.FPS)
     {
         // update the estimate time
         //        NSLog(@"Decode Time=%f", vDecodeTime / vDecodeNum);
@@ -322,6 +391,115 @@ NSMutableArray *myImage;
 
 #define LERP(A,B,C) ((A)*(1.0-C)+(B)*C)
 
+#ifdef RENDER_BY_OPENGLES
+-(void)displayNextFrame:(NSTimer *)timer {
+	NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
+    NSTimeInterval vTmpTime= [NSDate timeIntervalSinceReferenceDate];
+    
+    MyVideoFrame * pVideoFrame1, *pVideoFrame2, *pVideoFrame3, *pVideoFrame4;
+    // albert.liao ***
+    [myGLView clearFrameBuffer];
+    
+    if(isStop)
+    {
+		[timer invalidate];
+		[playButton setEnabled:YES];
+		return;
+	}
+    
+    vTmpTime = [NSDate timeIntervalSinceReferenceDate];
+	if (![video1 stepFrame]) {
+		[timer invalidate];
+		[playButton setEnabled:YES];
+		return;
+	}
+    vDecodeTime += [NSDate timeIntervalSinceReferenceDate]-vTmpTime;
+    vDecodeNum++;
+
+    
+    vTmpTime = [NSDate timeIntervalSinceReferenceDate];
+    
+    // This function cost about 11ms in iPad2...
+    // This is the bottle neck of GLView
+    pVideoFrame1 =[MyGLView CopyAVFrameToVideoFrame:self.video1->pFrame \
+                                            withWidth: self.video1->pFrame->width \
+                                            withHeight: self.video1->pFrame->height];
+
+
+    [myGLView setFrame:pVideoFrame1 at:eLOC_TOP_LEFT];
+
+    vShowImageTime += [NSDate timeIntervalSinceReferenceDate]-vTmpTime;
+    vShowImageNum++;
+    
+    if(vRtspNum>=2)
+    {
+        [video2 stepFrame];
+        pVideoFrame2 =[MyGLView CopyAVFrameToVideoFrame:self.video2->pFrame \
+                                                                   withWidth: self.video2->pFrame->width \
+                                                                  withHeight: self.video2->pFrame->height];
+        
+        [myGLView setFrame:pVideoFrame2 at:eLOC_TOP_RIGHT];
+        
+
+        if(vRtspNum==4)
+        {
+            [video3 stepFrame];
+            pVideoFrame3 =[MyGLView CopyAVFrameToVideoFrame:self.video1->pFrame \
+                                                                       withWidth: self.video1->pFrame->width \
+                                                                      withHeight: self.video1->pFrame->height];
+            
+            [myGLView setFrame:pVideoFrame3 at:eLOC_BOTTOM_LEFT];
+            
+
+            [video4 stepFrame];
+            pVideoFrame4 =[MyGLView CopyAVFrameToVideoFrame:self.video1->pFrame \
+                                                                       withWidth: self.video1->pFrame->width \
+                                                                      withHeight: self.video1->pFrame->height];
+            
+            [myGLView setFrame:pVideoFrame4 at:eLOC_BOTTOM_RIGHT];
+        }
+    }
+
+    pVideoFrame1 = nil;
+    pVideoFrame2 = nil;
+    pVideoFrame3 = nil;
+    pVideoFrame4 = nil;
+//    av_free(self.video1->pFrame);
+//    av_free(self.video2->pFrame);
+//    av_free(self.video3->pFrame);
+//    av_free(self.video4->pFrame);
+    
+	float frameTime = 1.0/([NSDate timeIntervalSinceReferenceDate]-startTime);
+	if (lastFrameTime<0) {
+		lastFrameTime = frameTime;
+	} else {
+		lastFrameTime = LERP(frameTime, lastFrameTime, 0.8);
+	}
+	[label setText:[NSString stringWithFormat:@"%.0f",lastFrameTime]];
+    
+    vDisplayCount++;
+    if(vDisplayCount==self.FPS) // display once per second
+    {
+        // update the estimate time
+        [self.DecodeLabel setText:[NSString stringWithFormat:@"%f", (vDecodeTime/self.FPS)]];
+        [self.ShowImageLabel setText:[NSString stringWithFormat:@"%f", (vShowImageTime/self.FPS)]];
+        //NSLog(@"self.FPS = %d ",self.FPS);
+        NSLog(@"<--Current Time");
+        
+        vDecodeNum=0;
+        vShowImageNum=0;
+        vShowImageTime=0.0;
+        vDecodeTime=0.0;
+        vDisplayCount=0;
+        
+    }
+    
+    [myGLView RenderToHardware:nil];
+
+}
+
+
+#else
 -(void)displayNextFrame:(NSTimer *)timer {
 	NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
     NSTimeInterval vTmpTime= [NSDate timeIntervalSinceReferenceDate];
@@ -370,14 +548,13 @@ NSMutableArray *myImage;
 	[label setText:[NSString stringWithFormat:@"%.0f",lastFrameTime]];
     
     vDisplayCount++;
-    if(vDisplayCount==30)
+    if(vDisplayCount==self.FPS) // display once per second
     {
         // update the estimate time
-//        NSLog(@"Decode Time=%f", vDecodeTime / vDecodeNum);
-//        NSLog(@"ShowImage Time=%f", vShowImageTime / vShowImageNum);
-        [self.DecodeLabel setText:[NSString stringWithFormat:@"%f", (vDecodeTime/vDecodeNum)]];
-        [self.ShowImageLabel setText:[NSString stringWithFormat:@"%f", (vShowImageTime/vShowImageNum)]];
-         
+        [self.DecodeLabel setText:[NSString stringWithFormat:@"%f", (vDecodeTime/self.FPS)]];
+        [self.ShowImageLabel setText:[NSString stringWithFormat:@"%f", (vShowImageTime/self.FPS)]];
+        NSLog(@"<--Current Time");
+        
         vDecodeNum=0;
         vShowImageNum=0;
         vShowImageTime=0.0;
@@ -386,7 +563,6 @@ NSMutableArray *myImage;
         
     }
 }
-
-
+#endif
 
 @end

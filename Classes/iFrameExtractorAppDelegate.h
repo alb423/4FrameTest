@@ -20,6 +20,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "MyGLView.h"
 @class VideoFrameExtractor;
 
 @interface iFrameExtractorAppDelegate : NSObject <UIApplicationDelegate> {
@@ -35,21 +36,27 @@
     VideoFrameExtractor *video3;
     VideoFrameExtractor *video4;
 	float lastFrameTime;
+    
+    MyGLView *myGLView;
+    //VSaaSVideoDecoder * videoDecoder;
 }
 
-@property (retain, nonatomic) IBOutlet UILabel *DecodeLabel;
-@property (retain, nonatomic) IBOutlet UILabel *ShowImageLabel;
-@property (nonatomic, retain) IBOutlet UIWindow *window;
-@property (retain, nonatomic) IBOutlet UIImageView *imageView;
-@property (retain, nonatomic) IBOutlet UIImageView *imageView3;
-@property (retain, nonatomic) IBOutlet UIImageView *imageView4;
-@property (retain, nonatomic) IBOutlet UIImageView *imageView2;
-@property (nonatomic, retain) IBOutlet UILabel *label;
-@property (nonatomic, retain) IBOutlet UIButton *playButton;
-@property (nonatomic, retain) VideoFrameExtractor *video1;
-@property (nonatomic, retain) VideoFrameExtractor *video2;
-@property (nonatomic, retain) VideoFrameExtractor *video3;
-@property (nonatomic, retain) VideoFrameExtractor *video4;
+@property (strong, nonatomic) IBOutlet UILabel *DecodeLabel;
+@property (strong, nonatomic) IBOutlet UILabel *ShowImageLabel;
+@property (nonatomic, strong) IBOutlet UIWindow *window;
+@property (strong, nonatomic) IBOutlet UIImageView *imageView;
+@property (strong, nonatomic) IBOutlet UIImageView *imageView3;
+@property (strong, nonatomic) IBOutlet UIImageView *imageView4;
+@property (strong, nonatomic) IBOutlet UIImageView *imageView2;
+@property (nonatomic, strong) IBOutlet UILabel *label;
+@property (nonatomic, strong) IBOutlet UIButton *playButton;
+@property (nonatomic, strong) VideoFrameExtractor *video1;
+@property (nonatomic, strong) VideoFrameExtractor *video2;
+@property (nonatomic, strong) VideoFrameExtractor *video3;
+@property (nonatomic, strong) VideoFrameExtractor *video4;
+
+@property (nonatomic) NSInteger FPS;
+
 -(IBAction)playButtonAction:(id)sender;
 - (IBAction)showTime:(id)sender;
 

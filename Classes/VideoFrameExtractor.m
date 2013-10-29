@@ -47,7 +47,7 @@ enum
 //@synthesize _texcoordVBO;
 //@synthesize _indexVBO;
 
-@synthesize outputWidth, outputHeight;
+@synthesize outputWidth, outputHeight, fps;
 
 -(void)setOutputWidth:(int)newValue {
 	if (outputWidth == newValue) return;
@@ -96,7 +96,7 @@ enum
     // Register all formats and codecs
     avcodec_register_all();
     av_register_all();
-    
+    fps=0.0;
     
     // Get File size and read to the buffer
     if (moviePath) {
@@ -107,7 +107,7 @@ enum
             vpFileX->pBuffer = (unsigned char*) av_malloc(vpFileX->FileSize);
             memcpy(vpFileX->pBuffer , [pData bytes], vpFileX->FileSize);
             
-            NSLog(@"filesize =%lld", vpFileX->FileSize);
+            NSLog(@"file %@,size =%lld", moviePath, vpFileX->FileSize);
 
         }  
     }
@@ -124,7 +124,7 @@ enum
     
     // Open video file
     if(avformat_open_input(&pFormatCtx, "dummyFileName", NULL, NULL) != 0) {
-        av_log(NULL, AV_LOG_ERROR, "Couldn't open file\n");
+        av_log(NULL, AV_LOG_ERROR, "Couldn't open memory file\n");
         //goto initError;
     }
     
@@ -157,6 +157,8 @@ enum
         goto initError;
     }
 	
+    av_dump_format(pFormatCtx, 0, [moviePath cStringUsingEncoding:NSASCIIStringEncoding], 0);
+    
     // Allocate video frame
     pFrame = avcodec_alloc_frame();
     
@@ -164,6 +166,7 @@ enum
 	self.outputHeight = pCodecCtx->height;
  
     // 20130311 albert.liao modified start
+#if 0
     {
         AVHWAccel *vHwAccel = NULL;
         vHwAccel  = ff_find_hwaccel( AV_CODEC_ID_H264 ,  AV_PIX_FMT_YUV420P ); // 7h800.mp4 is YUV420P
@@ -176,11 +179,12 @@ enum
             NSLog(@"Cannot Find vHwAccel  for H264");
         }
     }
+#endif
     // 20130311 albert.liao modified end
 	return self;
 	
 initError:
-	[self release];
+	;
 	return nil;
     
 }
@@ -194,7 +198,7 @@ initError:
     avcodec_register_all();
     av_register_all();
     avformat_network_init();
-    
+    fps=0.0;
     // Open video file
     AVDictionary *opts = 0;
     //int ret = av_dict_set(&opts, "rtsp_transport", "tcp", 0);
@@ -239,16 +243,22 @@ initError:
     pFrame = avcodec_alloc_frame();
 			
     av_dump_format(pFormatCtx, 0, [moviePath cStringUsingEncoding:NSASCIIStringEncoding], 0);
+    
+    if(fps==0)
+    {
+        fps = 1.0/ av_q2d(pCodecCtx->time_base)/ FFMAX(pCodecCtx->ticks_per_frame, 1);
+        NSLog(@"fps_method(tbc): 1/av_q2d()=%g",fps);
+    }
+    
 	outputWidth = pCodecCtx->width;
 	self.outputHeight = pCodecCtx->height;
 			
 	return self;
 	
 initError:
-	[self release];
+	;
 	return nil;
 }
-
 
 -(void)setupScaler {
 
@@ -297,18 +307,18 @@ initError:
     // Close the video file
     if (pFormatCtx) avformat_close_input(&pFormatCtx);
 	
-	[super dealloc];
 }
 
 -(BOOL)stepFrame {
 	// AVPacket packet;
-    int frameFinished=0;
+    int vRet, frameFinished=0;
 
     while(!frameFinished && av_read_frame(pFormatCtx, &packet)>=0) {
         // Is this a packet from the video stream?
         if(packet.stream_index==videoStream) {
             // Decode video frame
-            avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, &packet);
+            vRet = avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, &packet);
+            if(vRet<=0) NSLog(@"avcodec_decode_video2 error");
         }
 		
 	}
