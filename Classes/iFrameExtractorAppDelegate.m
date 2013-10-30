@@ -44,10 +44,15 @@
 #define VIDEO_SRC4 @"7h800-4.mp4"
 
 #else
-#define VIDEO_SRC1 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
-#define VIDEO_SRC2 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
-#define VIDEO_SRC3 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
-#define VIDEO_SRC4 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
+//#define VIDEO_SRC1 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
+//#define VIDEO_SRC2 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
+//#define VIDEO_SRC3 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
+//#define VIDEO_SRC4 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
+
+#define VIDEO_SRC1 @"rtsp://210.65.250.18:80/cam000b67014ff4001/20131025/094606.mp4"
+#define VIDEO_SRC2 @"rtsp://210.65.250.18:80/cam000b67014ff4001/20131025/094606.mp4"
+#define VIDEO_SRC3 @"rtsp://210.65.250.18:80/cam000b67014ff4001/20131025/094606.mp4"
+#define VIDEO_SRC4 @"rtsp://210.65.250.18:80/cam000b67014ff4001/20131025/094606.mp4"
 
 #endif
 
@@ -405,6 +410,107 @@ NSMutableArray *myImage;
 #define LERP(A,B,C) ((A)*(1.0-C)+(B)*C)
 
 #if RENDER_BY_OPENGLES==1
+
+// Fix me
+#if 0
+-(void)displayNextFrame:(NSTimer *)timer {
+	NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
+    NSTimeInterval vTmpTime= [NSDate timeIntervalSinceReferenceDate];
+    
+
+    [myGLView clearFrameBuffer];
+
+    
+    if(isStop)
+    {
+		[timer invalidate];
+		[playButton setEnabled:YES];
+		return;
+	}
+    
+    vTmpTime = [NSDate timeIntervalSinceReferenceDate];
+	if (![video1 stepFrame]) {
+		[timer invalidate];
+		[playButton setEnabled:YES];
+		return;
+	}
+    vDecodeTime += [NSDate timeIntervalSinceReferenceDate]-vTmpTime;
+    vDecodeNum++;
+    
+    
+    vTmpTime = [NSDate timeIntervalSinceReferenceDate];
+    
+    [myGLView setAVFrame:self.video1->pFrame at:eLOC_TOP_LEFT];
+    
+    vCopyFrameTime += [NSDate timeIntervalSinceReferenceDate]-vTmpTime;
+
+    
+    vShowImageTime += [NSDate timeIntervalSinceReferenceDate]-vTmpTime;
+    vShowImageNum++;
+    
+    if(vRtspNum>=2)
+    {
+        [video2 stepFrame];
+        [myGLView setAVFrame:self.video2->pFrame at:eLOC_TOP_RIGHT];
+
+        
+        if(vRtspNum==4)
+        {
+            [video3 stepFrame];
+            [myGLView setAVFrame:self.video3->pFrame at:eLOC_BOTTOM_LEFT];
+
+            
+            [video4 stepFrame];
+            [myGLView setAVFrame:self.video4->pFrame at:eLOC_BOTTOM_RIGHT];
+
+        }
+    }
+    
+    pVideoFrame1 = nil;
+    pVideoFrame2 = nil;
+    pVideoFrame3 = nil;
+    pVideoFrame4 = nil;
+
+    
+	float frameTime = 1.0/([NSDate timeIntervalSinceReferenceDate]-startTime);
+	if (lastFrameTime<0) {
+		lastFrameTime = frameTime;
+	} else {
+		lastFrameTime = LERP(frameTime, lastFrameTime, 0.8);
+	}
+	[label setText:[NSString stringWithFormat:@"%.0f",lastFrameTime]];
+    
+    vDisplayCount++;
+    if(vDisplayCount==self.FPS) // display once per second
+    {
+        // update the estimate time
+        [self.DecodeLabel setText:[NSString stringWithFormat:@"%f", (vDecodeTime/self.FPS)]];
+        [self.ShowImageLabel setText:[NSString stringWithFormat:@"%f", (vShowImageTime/self.FPS)]];
+        //NSLog(@"self.FPS = %d ",self.FPS);
+        NSLog(@"<--Current Time");
+        
+        NSLog(@"RenderTime %f %f", (vCopyFrameTime/self.FPS), (vShowImageTime/self.FPS));
+        
+        
+        vDecodeNum=0;
+        vShowImageNum=0;
+        vShowImageTime=0.0;
+        vDecodeTime=0.0;
+        vDisplayCount=0;
+        
+        vCopyFrameTime=0.0;
+    }
+    
+    
+
+        [myGLView RenderToHardware:nil];
+
+    
+    
+}
+
+//
+#else
 -(void)displayNextFrame:(NSTimer *)timer {
 	NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
     NSTimeInterval vTmpTime= [NSDate timeIntervalSinceReferenceDate];
@@ -555,6 +661,7 @@ NSMutableArray *myImage;
     
 
 }
+#endif
 
 
 #else

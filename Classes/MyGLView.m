@@ -318,6 +318,9 @@ enum {
     int iWidth;
     int iHeight;
     int ScreenNumber;
+    
+    GLuint pTmpTextures[3];
+    UInt8 pTmpPixels[3][1024*720];
 }
 
 + (Class) layerClass
@@ -763,17 +766,6 @@ exit:
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-- (void)setTexture: (MyVideoFrame *) frame at: (eRenderLocType) vLocation
-{
-    if (frame) {
-        //[_renderer setFrame:frame];
-        //[_renderer setFrame:frame width:fWidth height:fHeight at:0];
-        
-        [_renderer setFrame:frame width:frame.width height:frame.height at:0];
-        
-        //[_renderer setFrame:frame width:_backingWidth height:_backingHeight at:0];
-    }
-}
 
 // When multi-thread, we should avoid different thread access CurrentContext at the same time
 // Use operation queue...
@@ -849,6 +841,146 @@ exit:
     // NSLog(@"setFrame at:%d",vLocation);
 }
 
+- (void)setAVFrame: (AVFrame *) frame at: (eRenderLocType) vLocation
+{
+    static const GLfloat texCoords[] = {
+        0.0f, 1.0f,
+        1.0f, 1.0f,
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+
+        0.0f, 1.0f,
+        1.0f, 1.0f,
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+        
+        0.0f, 1.0f,
+        1.0f, 1.0f,
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+        
+        0.0f, 1.0f,
+        1.0f, 1.0f,
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+    };
+	
+    [EAGLContext setCurrentContext:_context];
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
+    glViewport(0, 0, _backingWidth, _backingHeight);
+    
+    //    NSLog(@" w,h = (%d,%d) (%d,%.d)",_backingWidth, _backingHeight, iWidth, iHeight);
+    //    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    //    glClear(GL_COLOR_BUFFER_BIT);
+	glUseProgram(_program);
+    
+    if (frame)
+    {
+        //NSLog(@"---yuvFrame %d %d %d", yuvFrame.luma.length, yuvFrame.chromaB.length, yuvFrame.chromaR.length);
+        const NSUInteger frameWidth = frame->width;
+        const NSUInteger frameHeight = frame->height;
+        
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        
+        if (0 == pTmpTextures[0])
+            glGenTextures(3, pTmpTextures);
+        
+        
+        int width = frameWidth, height = frameHeight;
+        int i=0,j=0;
+        UInt8 *pTmp = NULL, *pSrc = NULL;
+        
+        {
+            i = 0;
+            //width = MIN(linesize, width);
+            //NSMutableData *md = [NSMutableData dataWithLength: width * height];
+            //Byte *dst = md.mutableBytes;
+            pSrc = frame->data[i];
+            pTmp = pTmpPixels[i];
+            for (j = 0; j < height; ++j) {
+                memcpy(pTmp, pSrc, width);
+                pTmp += width;
+                pSrc += frame->linesize[i];
+            }
+            
+            i = 1; height/=2; width/=2;
+            pSrc = frame->data[i];
+            pTmp = pTmpPixels[i];
+            for (j = 0; j < height; ++j) {
+                memcpy(pTmp, pSrc, width);
+                pTmp += width;
+                pSrc += frame->linesize[i];
+            }
+            
+            i = 2;
+            pSrc = frame->data[i];
+            pTmp = pTmpPixels[i];
+            for (j = 0; j < height; ++j) {
+                memcpy(pTmp, pSrc, width);
+                pTmp += width;
+                pSrc += frame->linesize[i];
+            }
+        }
+        
+        //const UInt8 *pixels[3] = { yuvFrame.luma.bytes, yuvFrame.chromaB.bytes, yuvFrame.chromaR.bytes };
+        const NSUInteger widths[3]  = { frameWidth, frameWidth / 2, frameWidth / 2 };
+        const NSUInteger heights[3] = { frameHeight, frameHeight / 2, frameHeight / 2 };
+        
+        for (int i = 0; i < 3; ++i) {
+            
+            glBindTexture(GL_TEXTURE_2D, pTmpTextures[i]);
+            
+            glTexImage2D(GL_TEXTURE_2D,
+                         0,
+                         GL_LUMINANCE,
+                         widths[i],
+                         heights[i],
+                         0,
+                         GL_LUMINANCE,
+                         GL_UNSIGNED_BYTE,
+                         pTmpPixels[i]);
+            
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        }
+    }
+    
+    for (int i = 0; i < 3; ++i) {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, pTmpTextures[i]);
+        //glUniform1i(_uniformSamplers[i], i);
+    }
+    
+    //if ([_renderer prepareRender]) {
+    {
+        GLfloat modelviewProj[16];
+        mat4f_LoadOrtho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f, modelviewProj);
+        glUniformMatrix4fv(_uniformMatrix, 1, GL_FALSE, modelviewProj);
+        
+        glVertexAttribPointer(ATTRIBUTE_VERTEX, 2, GL_FLOAT, 0, 0, _vertices);
+        glEnableVertexAttribArray(ATTRIBUTE_VERTEX);
+        glVertexAttribPointer(ATTRIBUTE_TEXCOORD, 2, GL_FLOAT, 0, 0, texCoords);
+        glEnableVertexAttribArray(ATTRIBUTE_TEXCOORD);
+        
+        if(eLOC_TOP_LEFT == vLocation)
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        else if(eLOC_TOP_RIGHT == vLocation)
+            glDrawArrays(GL_TRIANGLE_STRIP, 4, 4);
+        else if(eLOC_BOTTOM_LEFT == vLocation)
+            glDrawArrays(GL_TRIANGLE_STRIP, 8, 4);
+        else
+            glDrawArrays(GL_TRIANGLE_STRIP, 12, 4);
+        
+    }
+    
+    // NSLog(@"setFrame at:%d",vLocation);
+}
+
+
+
 -(void)RenderToHardware:(NSTimer *)timer {
     //NSLog(@"RenderToHardware!!");
     
@@ -875,7 +1007,7 @@ static NSData * copyFrameData(UInt8 *src, int linesize, int width, int height)
     width = MIN(linesize, width);
     NSMutableData *md = [NSMutableData dataWithLength: width * height];
     Byte *dst = md.mutableBytes;
-
+    
     for (NSUInteger i = 0; i < height; ++i) {
         memcpy(dst, src, width);
         dst += width;
@@ -895,6 +1027,7 @@ static NSData * copyFrameData(UInt8 *src, int linesize, int width, int height)
     
     MyVideoFrame *yuvFrame = [[MyVideoFrame alloc] init];
     
+//    NSTimeInterval vTmpTime= [NSDate timeIntervalSinceReferenceDate];
     //yuvFrame.luma.bytes = pFrameIn->data[0];
     yuvFrame.luma = copyFrameData(pFrameIn->data[0],
                                   pFrameIn->linesize[0],
@@ -910,6 +1043,9 @@ static NSData * copyFrameData(UInt8 *src, int linesize, int width, int height)
                                      pFrameIn->linesize[2],
                                      vWidth / 2,
                                      vHeight / 2);
+    
+//    vTmpTime = [NSDate timeIntervalSinceReferenceDate]-vTmpTime;
+//    NSLog(@"vTmpTime=%f",vTmpTime); // For ipad2, above copy time cost 5ms
     
     yuvFrame.width = vWidth;
     yuvFrame.height = vHeight;
