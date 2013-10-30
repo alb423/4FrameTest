@@ -188,13 +188,22 @@ NSMutableArray *myImage;
     // Set this so that the texture will scale to the windows
     myGLView.contentMode = UIViewContentModeScaleAspectFit;
     
+    //[self.window addSubview:myGLView];
     [self.window insertSubview:myGLView atIndex:0];
 
-    NSLog(@"RTSPNUM=%d", vRtspNum);
+    self.FPS = self.video1.fps;
+    if(self.FPS==0) self.FPS=30;
+    NSLog(@"RTSPNUM=%d self.FPS=%d", vRtspNum, self.FPS);
     {
+//        [NSTimer scheduledTimerWithTimeInterval:1.0/self.FPS
+//                                         target:self
+//                                       selector:@selector(displayNextFrame_OpenGLEs:)
+//                                       userInfo:nil
+//                                        repeats:YES];
+        
         [NSTimer scheduledTimerWithTimeInterval:1.0/self.FPS
                                          target:self
-                                       selector:@selector(displayNextFrame:)
+                                       selector:@selector(displayNextFrame_Optimized:)
                                        userInfo:nil
                                         repeats:YES];
     }
@@ -349,7 +358,7 @@ NSMutableArray *myImage;
     self.FPS = video1.fps;
     if(self.FPS==0) self.FPS=30;
     
-    NSLog(@"RTSPNUM=%d", vRtspNum);
+    NSLog(@"RTSPNUM=%d self.FPS=%d", vRtspNum, self.FPS);
     {
         [NSTimer scheduledTimerWithTimeInterval:1.0/self.FPS
                                          target:self
@@ -411,9 +420,7 @@ NSMutableArray *myImage;
 
 #if RENDER_BY_OPENGLES==1
 
-// Fix me
-#if 0
--(void)displayNextFrame:(NSTimer *)timer {
+-(void)displayNextFrame_Optimized:(NSTimer *)timer {
 	NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
     NSTimeInterval vTmpTime= [NSDate timeIntervalSinceReferenceDate];
     
@@ -509,9 +516,8 @@ NSMutableArray *myImage;
     
 }
 
-//
-#else
--(void)displayNextFrame:(NSTimer *)timer {
+
+-(void)displayNextFrame_OpenGLEs:(NSTimer *)timer {
 	NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
     NSTimeInterval vTmpTime= [NSDate timeIntervalSinceReferenceDate];
 
@@ -661,10 +667,9 @@ NSMutableArray *myImage;
     
 
 }
-#endif
-
 
 #else
+
 -(void)displayNextFrame:(NSTimer *)timer {
 	NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
     NSTimeInterval vTmpTime= [NSDate timeIntervalSinceReferenceDate];
@@ -729,5 +734,4 @@ NSMutableArray *myImage;
     }
 }
 #endif
-
 @end

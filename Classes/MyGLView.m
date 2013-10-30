@@ -320,7 +320,9 @@ enum {
     int ScreenNumber;
     
     GLuint pTmpTextures[3];
-    UInt8 pTmpPixels[3][1024*720];
+    UInt8  pTmpPixels[3][1280*720]; // For max resolution 720p
+    GLint  pTmpUniformSamplers[3];
+
 }
 
 + (Class) layerClass
@@ -865,70 +867,80 @@ exit:
         1.0f, 0.0f,
     };
 	
+    if (!frame)
+        return;
+    
     [EAGLContext setCurrentContext:_context];
     
-    glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
-    glViewport(0, 0, _backingWidth, _backingHeight);
+    //glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
+    //glViewport(0, 0, _backingWidth, _backingHeight);
     
-    //    NSLog(@" w,h = (%d,%d) (%d,%.d)",_backingWidth, _backingHeight, iWidth, iHeight);
-    //    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    //    glClear(GL_COLOR_BUFFER_BIT);
-	glUseProgram(_program);
+//	NSLog(@" w,h = (%d,%d) (%d,%.d)",_backingWidth, _backingHeight, iWidth, iHeight);
+//	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+//	glClear(GL_COLOR_BUFFER_BIT);
+//	glUseProgram(_program);
     
-    if (frame)
+    // Try to minimize below time....
+    //NSTimeInterval vTmpTime= [NSDate timeIntervalSinceReferenceDate];
     {
-        //NSLog(@"---yuvFrame %d %d %d", yuvFrame.luma.length, yuvFrame.chromaB.length, yuvFrame.chromaR.length);
         const NSUInteger frameWidth = frame->width;
         const NSUInteger frameHeight = frame->height;
-        
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        
-        if (0 == pTmpTextures[0])
-            glGenTextures(3, pTmpTextures);
-        
-        
-        int width = frameWidth, height = frameHeight;
-        int i=0,j=0;
-        UInt8 *pTmp = NULL, *pSrc = NULL;
-        
-        {
-            i = 0;
-            //width = MIN(linesize, width);
-            //NSMutableData *md = [NSMutableData dataWithLength: width * height];
-            //Byte *dst = md.mutableBytes;
-            pSrc = frame->data[i];
-            pTmp = pTmpPixels[i];
-            for (j = 0; j < height; ++j) {
-                memcpy(pTmp, pSrc, width);
-                pTmp += width;
-                pSrc += frame->linesize[i];
-            }
-            
-            i = 1; height/=2; width/=2;
-            pSrc = frame->data[i];
-            pTmp = pTmpPixels[i];
-            for (j = 0; j < height; ++j) {
-                memcpy(pTmp, pSrc, width);
-                pTmp += width;
-                pSrc += frame->linesize[i];
-            }
-            
-            i = 2;
-            pSrc = frame->data[i];
-            pTmp = pTmpPixels[i];
-            for (j = 0; j < height; ++j) {
-                memcpy(pTmp, pSrc, width);
-                pTmp += width;
-                pSrc += frame->linesize[i];
-            }
-        }
-        
-        //const UInt8 *pixels[3] = { yuvFrame.luma.bytes, yuvFrame.chromaB.bytes, yuvFrame.chromaR.bytes };
         const NSUInteger widths[3]  = { frameWidth, frameWidth / 2, frameWidth / 2 };
         const NSUInteger heights[3] = { frameHeight, frameHeight / 2, frameHeight / 2 };
         
-        for (int i = 0; i < 3; ++i) {
+        
+        // If the source data is not 4 byte alignment, we should set GL_UNPACK_ALIGNMENT
+        //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 2); //better
+
+        // reference http://www.zwqxin.com/archives/opengl/opengl-api-memorandum-2.html
+        
+        if (0 == pTmpTextures[0])
+            glGenTextures(3, pTmpTextures);
+
+        // Unroll the loop to speed up
+        // In iPAD2, below need 4~5 ms
+        {
+            int width = frameWidth, height = frameHeight;
+            int i=0,j=0;
+            UInt8 *pTmp = NULL, *pSrc = NULL;
             
+            i = 0;
+            width = MIN(frame->linesize[i], width);
+            pSrc = frame->data[i];
+            pTmp = pTmpPixels[i];
+            for (j = 0; j < height; ++j) {
+                memcpy(pTmp, pSrc, width);
+                pTmp += width;
+                pSrc += frame->linesize[i];
+            }
+            
+            i = 1; height=frameHeight/2; width=frameWidth/2;
+            width = MIN(frame->linesize[i], width);
+            pSrc = frame->data[i];
+            pTmp = pTmpPixels[i];
+            for (j = 0; j < height; ++j) {
+                memcpy(pTmp, pSrc, width);
+                pTmp += width;
+                pSrc += frame->linesize[i];
+            }
+            
+            i = 2; height=frameHeight/2; width=frameWidth/2;
+            width = MIN(frame->linesize[i], width);
+            pSrc = frame->data[i];
+            pTmp = pTmpPixels[i];
+            for (j = 0; j < height; ++j) {
+                memcpy(pTmp, pSrc, width);
+                pTmp += width;
+                pSrc += frame->linesize[i];
+            }
+            //NSLog(@" linesize=(%d,%d,%d)",frame->linesize[0],frame->linesize[1],frame->linesize[2]);
+        }
+        
+        // In iPAD2, below need 4~5 ms
+#if 0
+        for (int i = 0; i < 3; ++i)
+        {
             glBindTexture(GL_TEXTURE_2D, pTmpTextures[i]);
             
             glTexImage2D(GL_TEXTURE_2D,
@@ -946,15 +958,81 @@ exit:
             glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         }
+#else
+        {
+            int i = 0;
+            glBindTexture(GL_TEXTURE_2D, pTmpTextures[i]);
+            
+            glTexImage2D(GL_TEXTURE_2D,
+                         0,
+                         GL_LUMINANCE,
+                         widths[i],
+                         heights[i],
+                         0,
+                         GL_LUMINANCE,
+                         GL_UNSIGNED_BYTE,
+                         pTmpPixels[i]);
+            
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            
+            i = 1;
+            glBindTexture(GL_TEXTURE_2D, pTmpTextures[i]);
+            
+            glTexImage2D(GL_TEXTURE_2D,
+                         0,
+                         GL_LUMINANCE,
+                         widths[i],
+                         heights[i],
+                         0,
+                         GL_LUMINANCE,
+                         GL_UNSIGNED_BYTE,
+                         pTmpPixels[i]);
+            
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            
+            i = 2;
+            glBindTexture(GL_TEXTURE_2D, pTmpTextures[i]);
+            
+            glTexImage2D(GL_TEXTURE_2D,
+                         0,
+                         GL_LUMINANCE,
+                         widths[i],
+                         heights[i],
+                         0,
+                         GL_LUMINANCE,
+                         GL_UNSIGNED_BYTE,
+                         pTmpPixels[i]);
+            
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        }
+#endif
+        
     }
+
+
+//    vTmpTime = [NSDate timeIntervalSinceReferenceDate]-vTmpTime;
+//    NSLog(@"vTmpTime = %f",vTmpTime);
+    
+    glUseProgram(_program);
+    pTmpUniformSamplers[0] = glGetUniformLocation(_program, "s_texture_y");
+    pTmpUniformSamplers[1] = glGetUniformLocation(_program, "s_texture_u");
+    pTmpUniformSamplers[2] = glGetUniformLocation(_program, "s_texture_v");
     
     for (int i = 0; i < 3; ++i) {
         glActiveTexture(GL_TEXTURE0 + i);
         glBindTexture(GL_TEXTURE_2D, pTmpTextures[i]);
-        //glUniform1i(_uniformSamplers[i], i);
+        glUniform1i(pTmpUniformSamplers[i], i);
     }
     
-    //if ([_renderer prepareRender]) {
     {
         GLfloat modelviewProj[16];
         mat4f_LoadOrtho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f, modelviewProj);

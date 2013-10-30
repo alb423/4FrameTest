@@ -127,7 +127,7 @@
 			isa = PBXGroup;
 			children = (
 				1D3623240D0F684500981E51 /* iFrameExtractorAppDelegate.h */,
-				9A53E8D2181E56CF006A611B /* VSaaS */,
+				9A53E8D2181E56CF006A611B /* GLView */,
 				1D3623250D0F684500981E51 /* iFrameExtractorAppDelegate.m */,
 				0921E13F10FADAFB004EAA40 /* Utilities.h */,
 				0921E14010FADAFB004EAA40 /* Utilities.m */,
@@ -212,13 +212,13 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		9A53E8D2181E56CF006A611B /* VSaaS */ = {
+		9A53E8D2181E56CF006A611B /* GLView */ = {
 			isa = PBXGroup;
 			children = (
 				B20DF6A5182002920092A989 /* MyGLView.m */,
 				B20DF6A6182002920092A989 /* MyGLView.h */,
 			);
-			name = VSaaS;
+			name = GLView;
 			sourceTree = "<group>";
 		};
 		B23373E816DF0DFA00F5DE7F /* icons */ = {
@@ -371,6 +371,7 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/ffmpeg/compiled/i386/lib\"",
 				);
+				LLVM_VECTORIZE_LOOPS = NO;
 				ONLY_ACTIVE_ARCH = YES;
 				"OTHER_CODE_SIGN_FLAGS[sdk=*]" = "";
 				PRODUCT_NAME = "rtsp-home";
@@ -403,6 +404,7 @@
 					"\"$(SRCROOT)/ffmpeg/compiled/armv7-neon/lib\"",
 				);
 				"LIBRARY_SEARCH_PATHS[sdk=iphonesimulator*]" = "";
+				LLVM_VECTORIZE_LOOPS = NO;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "rtsp-home";
 				PROVISIONING_PROFILE = "";

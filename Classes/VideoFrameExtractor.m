@@ -159,6 +159,12 @@ enum
 	
     av_dump_format(pFormatCtx, 0, [moviePath cStringUsingEncoding:NSASCIIStringEncoding], 0);
     
+    if(fps==0)
+    {
+        fps = 1.0/ av_q2d(pCodecCtx->time_base)/ FFMAX(pCodecCtx->ticks_per_frame, 1);
+        NSLog(@"fps_method(tbc): 1/av_q2d()=%g",fps);
+    }
+    
     // Allocate video frame
     pFrame = avcodec_alloc_frame();
     
