@@ -310,7 +310,7 @@ initError:
 }
 
 -(BOOL)stepFrame {
-	// AVPacket packet;
+
     int vRet, frameFinished=0;
 
     while(!frameFinished && av_read_frame(pFormatCtx, &packet)>=0) {
@@ -320,6 +320,7 @@ initError:
             vRet = avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, &packet);
             if(vRet<=0) NSLog(@"avcodec_decode_video2 error");
         }
+        av_free_packet(&packet);
 		
 	}
 	return frameFinished!=0;

@@ -398,10 +398,11 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
 				LD_NO_PIE = YES;
 				LIBRARY_SEARCH_PATHS = "";
-				"LIBRARY_SEARCH_PATHS[arch=*]" = (
+				"LIBRARY_SEARCH_PATHS[arch=armv7]" = (
 					"$(inherited)",
-					"\"$(SRCROOT)/ffmpeg/compiled/i386/lib\"",
+					"\"$(SRCROOT)/ffmpeg/compiled/armv7-neon/lib\"",
 				);
+				"LIBRARY_SEARCH_PATHS[sdk=iphonesimulator*]" = "";
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "rtsp-home";
 				PROVISIONING_PROFILE = "";

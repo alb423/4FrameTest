@@ -28,6 +28,14 @@
 #define PLAY_MEMORY_FILE 1
 #define PLAY_REMOTE_FILE 2
 
+
+// Configuration
+#define PLAY_MEHTOD PLAY_MEMORY_FILE // PLAY_MEMORY_FILE, PLAY_REMOTE_FILE
+#define RENDER_BY_OPENGLES 1
+#define ENABLE_DISPATCH_QUEUE_FOR_GLVIEW 0 // enable will cause crash
+
+
+
 #if PLAY_MEHTOD == PLAY_MEMORY_FILE
 
 #define VIDEO_SRC1 @"7h800.mp4"
@@ -36,11 +44,10 @@
 #define VIDEO_SRC4 @"7h800-4.mp4"
 
 #else
-//#define VIDEO_SRC1 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
-//#define VIDEO_SRC2 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
-//#define VIDEO_SRC3 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
-//#define VIDEO_SRC4 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
-
+#define VIDEO_SRC1 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
+#define VIDEO_SRC2 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
+#define VIDEO_SRC3 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
+#define VIDEO_SRC4 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
 
 #endif
 
@@ -49,10 +56,7 @@
 //#define VIDEO_SRC @"rtsp://quicktime.tc.columbia.edu:554/users/lrf10/movies/sixties.mov"
 
 
-// Configuration
-#define PLAY_MEHTOD PLAY_REMOTE_FILE
-#define RENDER_BY_OPENGLES 1
-#define ENABLE_DISPATCH_QUEUE_FOR_GLVIEW 0 // enable will cause crash
+
 
 
 
