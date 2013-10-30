@@ -23,7 +23,7 @@ typedef enum eRenderLoc {
 
 @interface MyGLView : UIView
 
-- (id) initWithFrame:(CGRect)frame frameWidth:(float) w frameHeight:(float) h;
+- (id) initWithFrame:(CGRect)frame splitnumber:(int) vSplitNumber frameWidth:(float) w frameHeight:(float) h;
 
 - (void) render: (MyVideoFrame *) frame;
 

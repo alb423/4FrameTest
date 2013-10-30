@@ -26,18 +26,18 @@
 
 #define PLAY_MEMORY_FILE 1
 #define PLAY_REMOTE_FILE 2
-#define PLAY_MEHTOD PLAY_REMOTE_FILE
+#define PLAY_MEHTOD PLAY_MEMORY_FILE
+
+
 
 #if PLAY_MEHTOD == PLAY_MEMORY_FILE
+
 #define VIDEO_SRC1 @"7h800.mp4"
 #define VIDEO_SRC2 @"7h800-2.mp4"
 #define VIDEO_SRC3 @"7h800-3.mp4"
 #define VIDEO_SRC4 @"7h800-4.mp4"
+
 #else
-// "rtsp://mm2.pcslab.com/mm/7h800.mp4"
-
-//
-
 //#define VIDEO_SRC1 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
 //#define VIDEO_SRC2 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
 //#define VIDEO_SRC3 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
@@ -54,7 +54,7 @@
 //#define VIDEO_SRC @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
 //#define VIDEO_SRC @"rtsp://quicktime.tc.columbia.edu:554/users/lrf10/movies/sixties.mov"
 
-//#define RENDER_BY_OPENGLES 1
+#define RENDER_BY_OPENGLES 1
 
 @implementation iFrameExtractorAppDelegate
 int vRtspNum = 1;
@@ -62,7 +62,7 @@ int isStop =0;
 
 int   vDecodeNum = 0;
 float vDecodeTime = 0.0;
-
+float vCopyFrameTime = 0.0;
 int   vShowImageNum = 0;
 float vShowImageTime = 0.0;
 
@@ -96,7 +96,7 @@ NSMutableArray *myImage;
     [window makeKeyAndVisible];
 }
 
-#ifdef RENDER_BY_OPENGLES // Test for shaders
+#if RENDER_BY_OPENGLES==1 // Test for shaders
 -(IBAction)playButtonAction:(id)sender {
 	[playButton setEnabled:NO];
     isStop = 0;
@@ -108,6 +108,7 @@ NSMutableArray *myImage;
     isStop = 0;
 
     UIButton *vBn = (UIButton *)sender;
+    
     if([vBn.currentTitle isEqualToString:@"1"])
     {
         vRtspNum=1;
@@ -165,9 +166,10 @@ NSMutableArray *myImage;
     vBound.size.width=self.window.bounds.size.width;
     vBound.size.height=self.window.bounds.size.height;
     
-    
-    myGLView = [[MyGLView alloc] initWithFrame:vBound frameWidth:ScreenWidth frameHeight:ScreenHeight];
+    myGLView = [[MyGLView alloc] initWithFrame:vBound splitnumber:vRtspNum frameWidth:ScreenWidth frameHeight:ScreenHeight];
 
+    //myGLView = [[MyGLView alloc] initWithFrame:vBound frameWidth:ScreenWidth frameHeight:ScreenHeight];
+    
     //[myGLView setTransform:CGAffineTransformMakeRotation(M_PI/2)];
     //[self.window addSubview:myGLView];
     [self.window insertSubview:myGLView atIndex:0];
@@ -391,10 +393,11 @@ NSMutableArray *myImage;
 
 #define LERP(A,B,C) ((A)*(1.0-C)+(B)*C)
 
-#ifdef RENDER_BY_OPENGLES
+#if RENDER_BY_OPENGLES==1
 -(void)displayNextFrame:(NSTimer *)timer {
 	NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
     NSTimeInterval vTmpTime= [NSDate timeIntervalSinceReferenceDate];
+
     
     MyVideoFrame * pVideoFrame1, *pVideoFrame2, *pVideoFrame3, *pVideoFrame4;
     // albert.liao ***
@@ -425,7 +428,8 @@ NSMutableArray *myImage;
                                             withWidth: self.video1->pFrame->width \
                                             withHeight: self.video1->pFrame->height];
 
-
+    vCopyFrameTime += [NSDate timeIntervalSinceReferenceDate]-vTmpTime;
+    
     [myGLView setFrame:pVideoFrame1 at:eLOC_TOP_LEFT];
 
     vShowImageTime += [NSDate timeIntervalSinceReferenceDate]-vTmpTime;
@@ -486,12 +490,16 @@ NSMutableArray *myImage;
         //NSLog(@"self.FPS = %d ",self.FPS);
         NSLog(@"<--Current Time");
         
+        NSLog(@"RenderTime %f %f", (vCopyFrameTime/self.FPS), (vShowImageTime/self.FPS));
+        
+        
         vDecodeNum=0;
         vShowImageNum=0;
         vShowImageTime=0.0;
         vDecodeTime=0.0;
         vDisplayCount=0;
         
+        vCopyFrameTime=0.0;
     }
     
     [myGLView RenderToHardware:nil];

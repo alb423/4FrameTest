@@ -317,6 +317,7 @@ enum {
     
     float fWidth;
     float fHeight;
+    int ScreenNumber;
 }
 
 + (Class) layerClass
@@ -325,11 +326,12 @@ enum {
 }
 
 
-- (id) initWithFrame:(CGRect)frame frameWidth:(float) w frameHeight:(float) h
+- (id) initWithFrame:(CGRect)frame splitnumber:(int) vSplitNumber frameWidth:(float) w frameHeight:(float) h
 {
     self = [super initWithFrame:frame];
     if (self) {
 
+        ScreenNumber = vSplitNumber;
         fWidth = w;
         fHeight = h;
         
@@ -389,44 +391,75 @@ enum {
             return nil;
         }
         
-
-
-        _vertices[0] = -1.0f;  // x0
-        _vertices[1] =  0.0f;  // y0
-        _vertices[2] =  0.0f;  // ..
-        _vertices[3] =  0.0f;
-        _vertices[4] = -1.0f;
-        _vertices[5] =  1.0f;
-        _vertices[6] =  0.0f;  // x3
-        _vertices[7] =  1.0f;  // y3
-        
-        _vertices[8] =  0.0f;  // x0
-        _vertices[9] =  0.0f;  // y0
-        _vertices[10] =  1.0f;  // ..
-        _vertices[11] =  0.0f;
-        _vertices[12] =  0.0f;
-        _vertices[13] =  1.0f;
-        _vertices[14] =  1.0f;  // x3
-        _vertices[15] =  1.0f;  // y3
-        
-        _vertices[16] = -1.0f;  // x0
-        _vertices[17] = -1.0f;  // y0
-        _vertices[18] =  0.0f;  // ..
-        _vertices[19] = -1.0f;
-        _vertices[20] = -1.0f;
-        _vertices[21] =  0.0f;
-        _vertices[22] =  0.0f;  // x3
-        _vertices[23] =  0.0f;  // y3
-        
-        _vertices[24] =  0.0f;  // x0
-        _vertices[25] = -1.0f;  // y0
-        _vertices[26] =  1.0f;  // ..
-        _vertices[27] = -1.0f;
-        _vertices[28] =  0.0f;
-        _vertices[29] =  0.0f;
-        _vertices[30] =  1.0f;  // x3
-        _vertices[31] =  0.0f;  // y3
-
+        if(ScreenNumber==1)
+        {
+            _vertices[0] = -1.0f;  // x0
+            _vertices[1] = -1.0f;  // y0
+            _vertices[2] =  1.0f;  // ..
+            _vertices[3] = -1.0f;
+            _vertices[4] = -1.0f;
+            _vertices[5] =  1.0f;
+            _vertices[6] =  1.0f;  // x3
+            _vertices[7] =  1.0f;  // y3
+        }
+        else if(ScreenNumber==1)
+        {
+            _vertices[0] = -1.0f;  // x0
+            _vertices[1] =  0.0f;  // y0
+            _vertices[2] =  1.0f;  // ..
+            _vertices[3] =  0.0f;
+            _vertices[4] = -1.0f;
+            _vertices[5] =  1.0f;
+            _vertices[6] =  1.0f;  // x3
+            _vertices[7] =  1.0f;  // y3
+            
+            _vertices[8] =  -1.0f;  // x0
+            _vertices[9] =  -1.0f;  // y0
+            _vertices[10] =  1.0f;  // ..
+            _vertices[11] = -1.0f;
+            _vertices[12] = -1.0f;
+            _vertices[13] =  0.0f;
+            _vertices[14] =  1.0f;  // x3
+            _vertices[15] =  0.0f;  // y3
+        }
+        else
+        {
+            _vertices[0] = -1.0f;  // x0
+            _vertices[1] =  0.0f;  // y0
+            _vertices[2] =  0.0f;  // ..
+            _vertices[3] =  0.0f;
+            _vertices[4] = -1.0f;
+            _vertices[5] =  1.0f;
+            _vertices[6] =  0.0f;  // x3
+            _vertices[7] =  1.0f;  // y3
+            
+            _vertices[8] =  0.0f;  // x0
+            _vertices[9] =  0.0f;  // y0
+            _vertices[10] =  1.0f;  // ..
+            _vertices[11] =  0.0f;
+            _vertices[12] =  0.0f;
+            _vertices[13] =  1.0f;
+            _vertices[14] =  1.0f;  // x3
+            _vertices[15] =  1.0f;  // y3
+            
+            _vertices[16] = -1.0f;  // x0
+            _vertices[17] = -1.0f;  // y0
+            _vertices[18] =  0.0f;  // ..
+            _vertices[19] = -1.0f;
+            _vertices[20] = -1.0f;
+            _vertices[21] =  0.0f;
+            _vertices[22] =  0.0f;  // x3
+            _vertices[23] =  0.0f;  // y3
+            
+            _vertices[24] =  0.0f;  // x0
+            _vertices[25] = -1.0f;  // y0
+            _vertices[26] =  1.0f;  // ..
+            _vertices[27] = -1.0f;
+            _vertices[28] =  0.0f;
+            _vertices[29] =  0.0f;
+            _vertices[30] =  1.0f;  // x3
+            _vertices[31] =  0.0f;  // y3
+        }
         
         //[self StartRenderLoop];
 
@@ -566,42 +599,75 @@ exit:
     const float h       = (height * dd / (float)_backingHeight);
     const float w       = (width  * dd / (float)_backingWidth );
 
-    _vertices[0] = -w;  // x0
-    _vertices[1] =  0.0f;  // y0
-    _vertices[2] =  0.0f;  // ..
-    _vertices[3] =  0.0f;
-    _vertices[4] = -w;
-    _vertices[5] =  h;
-    _vertices[6] =  0.0f;  // x3
-    _vertices[7] =  h;  // y3
-    
-    _vertices[8] =  0.0f;  // x0
-    _vertices[9] =  0.0f;  // y0
-    _vertices[10] =  w;  // ..
-    _vertices[11] =  0.0f;
-    _vertices[12] =  0.0f;
-    _vertices[13] =  h;
-    _vertices[14] =  w;  // x3
-    _vertices[15] =  h;  // y3
-    
-    _vertices[16] = -w;  // x0
-    _vertices[17] = -h;  // y0
-    _vertices[18] =  0.0f;  // ..
-    _vertices[19] = -h;
-    _vertices[20] = -w;
-    _vertices[21] =  0.0f;
-    _vertices[22] =  0.0f;  // x3
-    _vertices[23] =  0.0f;  // y3
-    
-    _vertices[24] =  0.0f;  // x0
-    _vertices[25] = -h;  // y0
-    _vertices[26] =  w;  // ..
-    _vertices[27] = -h;
-    _vertices[28] =  0.0f;
-    _vertices[29] =  0.0f;
-    _vertices[30] =  w;  // x3
-    _vertices[31] =  0.0f;  // y3
-
+    if(ScreenNumber==1)
+    {
+        _vertices[0] = - w;
+        _vertices[1] = - h;
+        _vertices[2] =   w;
+        _vertices[3] = - h;
+        _vertices[4] = - w;
+        _vertices[5] =   h;
+        _vertices[6] =   w;
+        _vertices[7] =   h;
+    }
+    else if(ScreenNumber==2)
+    {
+        _vertices[0] = - w;
+        _vertices[1] =   0;
+        _vertices[2] =   w;
+        _vertices[3] =   0;
+        _vertices[4] = - w;
+        _vertices[5] =   h;
+        _vertices[6] =   w;
+        _vertices[7] =   h;
+        
+        _vertices[8] = - w;
+        _vertices[9] = - h;
+        _vertices[10] =   w;
+        _vertices[11] = - h;
+        _vertices[12] = - w;
+        _vertices[13] =   0;
+        _vertices[14] =   w;
+        _vertices[15] =   0;
+    }
+    else
+    {
+        _vertices[0] = -w;  // x0
+        _vertices[1] =  0.0f;  // y0
+        _vertices[2] =  0.0f;  // ..
+        _vertices[3] =  0.0f;
+        _vertices[4] = -w;
+        _vertices[5] =  h;
+        _vertices[6] =  0.0f;  // x3
+        _vertices[7] =  h;  // y3
+        
+        _vertices[8] =  0.0f;  // x0
+        _vertices[9] =  0.0f;  // y0
+        _vertices[10] =  w;  // ..
+        _vertices[11] =  0.0f;
+        _vertices[12] =  0.0f;
+        _vertices[13] =  h;
+        _vertices[14] =  w;  // x3
+        _vertices[15] =  h;  // y3
+        
+        _vertices[16] = -w;  // x0
+        _vertices[17] = -h;  // y0
+        _vertices[18] =  0.0f;  // ..
+        _vertices[19] = -h;
+        _vertices[20] = -w;
+        _vertices[21] =  0.0f;
+        _vertices[22] =  0.0f;  // x3
+        _vertices[23] =  0.0f;  // y3
+        
+        _vertices[24] =  0.0f;  // x0
+        _vertices[25] = -h;  // y0
+        _vertices[26] =  w;  // ..
+        _vertices[27] = -h;
+        _vertices[28] =  0.0f;
+        _vertices[29] =  0.0f;
+        _vertices[30] =  w;  // x3
+        _vertices[31] =  0.0f;  // y3
+    }
 }
 
 
@@ -776,11 +842,15 @@ static NSData * copyFrameData(UInt8 *src, int linesize, int width, int height)
     width = MIN(linesize, width);
     NSMutableData *md = [NSMutableData dataWithLength: width * height];
     Byte *dst = md.mutableBytes;
+#if 0 // This can not enhance performance
+    memcpy(dst, src, width*height);
+#else
     for (NSUInteger i = 0; i < height; ++i) {
         memcpy(dst, src, width);
         dst += width;
         src += linesize;
     }
+#endif
     return md;
 }
 
@@ -794,7 +864,7 @@ static NSData * copyFrameData(UInt8 *src, int linesize, int width, int height)
     
     MyVideoFrame *yuvFrame = [[MyVideoFrame alloc] init];
     
-    
+    //yuvFrame.luma.bytes = pFrameIn->data[0];
     yuvFrame.luma = copyFrameData(pFrameIn->data[0],
                                   pFrameIn->linesize[0],
                                   vWidth,
