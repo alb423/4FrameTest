@@ -38,7 +38,9 @@
 	float lastFrameTime;
     
     MyGLView *myGLView;
-    //VSaaSVideoDecoder * videoDecoder;
+    dispatch_queue_t    _dispatchQueue;
+    
+    MyVideoFrame * pVideoFrame1, *pVideoFrame2, *pVideoFrame3, *pVideoFrame4;    
 }
 
 @property (strong, nonatomic) IBOutlet UILabel *DecodeLabel;

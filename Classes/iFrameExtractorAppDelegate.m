@@ -24,11 +24,9 @@
 #import "Utilities.h"
 #import "MyGLView.h"
 
+
 #define PLAY_MEMORY_FILE 1
 #define PLAY_REMOTE_FILE 2
-#define PLAY_MEHTOD PLAY_MEMORY_FILE
-
-
 
 #if PLAY_MEHTOD == PLAY_MEMORY_FILE
 
@@ -43,10 +41,6 @@
 //#define VIDEO_SRC3 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
 //#define VIDEO_SRC4 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
 
-#define VIDEO_SRC1 @"rtsp://210.65.250.18:80/cam000b67014ff4001/20131025/094606.mp4"
-#define VIDEO_SRC2 @"rtsp://210.65.250.18:80/cam000b67014ff4001/20131025/094606.mp4"
-#define VIDEO_SRC3 @"rtsp://210.65.250.18:80/cam000b67014ff4001/20131025/094606.mp4"
-#define VIDEO_SRC4 @"rtsp://210.65.250.18:80/cam000b67014ff4001/20131025/094606.mp4"
 
 #endif
 
@@ -54,7 +48,13 @@
 //#define VIDEO_SRC @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
 //#define VIDEO_SRC @"rtsp://quicktime.tc.columbia.edu:554/users/lrf10/movies/sixties.mov"
 
+
+// Configuration
+#define PLAY_MEHTOD PLAY_REMOTE_FILE
 #define RENDER_BY_OPENGLES 1
+#define ENABLE_DISPATCH_QUEUE_FOR_GLVIEW 0 // enable will cause crash
+
+
 
 @implementation iFrameExtractorAppDelegate
 int vRtspNum = 1;
@@ -74,7 +74,9 @@ NSMutableArray *myImage;
 
 -(void)applicationDidEnterBackground:(UIApplication *)application
 {
-    ;
+    if (_dispatchQueue) {
+        _dispatchQueue = NULL;
+    }
 }
 
 
@@ -92,7 +94,8 @@ NSMutableArray *myImage;
     //self.video = [[VideoFrameExtractor alloc] initWithVideo:[Utilities bundlePath:@"rtsp://quicktime.tc.columbia.edu:554/users/lrf10/movies/sixties.mov"]];
     //rtsp://mm2.pcslab.com/mm/7h800.mp4
 
-
+    _dispatchQueue  = dispatch_queue_create("MyGLView", DISPATCH_QUEUE_SERIAL);
+    
     [window makeKeyAndVisible];
 }
 
@@ -101,8 +104,8 @@ NSMutableArray *myImage;
 	[playButton setEnabled:NO];
     isStop = 0;
     
-    int ScreenHeight=960;
-    int ScreenWidth=640;
+    int VideoHeight=960;
+    int VideoWidth=640;
     
 	[playButton setEnabled:NO];
     isStop = 0;
@@ -155,23 +158,27 @@ NSMutableArray *myImage;
     // The bound should be assigned to the same size of screen
     //CGRect vBound = self.window.bounds;
     
-    // The size should be set according the video size
-    ScreenHeight = 720;
-    ScreenWidth = 1280;
+    // The size should be set according the video size, 1280 * 720 for 720p
+    VideoWidth = self.video1.sourceWidth;
+    VideoHeight = self.video1.sourceHeight;
 
-
+#if 0
     CGRect vBound;
     vBound.origin.x = self.window.bounds.origin.x;
     vBound.origin.y = self.window.bounds.origin.y;
     vBound.size.width=self.window.bounds.size.width;
-    vBound.size.height=self.window.bounds.size.height;
+    vBound.size.height=self.window.bounds.size.height; // (320,480) for iPhone4
+#else
+    CGRect vBound = [[UIScreen mainScreen] bounds];
+#endif
+    NSLog(@"x,y,w,h = (%.0f,%.0f,%.0f,%.0f)",vBound.origin.x,vBound.origin.y,vBound.size.width,vBound.size.height);
     
-    myGLView = [[MyGLView alloc] initWithFrame:vBound splitnumber:vRtspNum frameWidth:ScreenWidth frameHeight:ScreenHeight];
+    
+    myGLView = [[MyGLView alloc] initWithFrame:vBound splitnumber:vRtspNum frameWidth:VideoWidth frameHeight:VideoHeight];
 
-    //myGLView = [[MyGLView alloc] initWithFrame:vBound frameWidth:ScreenWidth frameHeight:ScreenHeight];
+    // Set this so that the texture will scale to the windows
+    myGLView.contentMode = UIViewContentModeScaleAspectFit;
     
-    //[myGLView setTransform:CGAffineTransformMakeRotation(M_PI/2)];
-    //[self.window addSubview:myGLView];
     [self.window insertSubview:myGLView atIndex:0];
 
     NSLog(@"RTSPNUM=%d", vRtspNum);
@@ -399,10 +406,16 @@ NSMutableArray *myImage;
     NSTimeInterval vTmpTime= [NSDate timeIntervalSinceReferenceDate];
 
     
-    MyVideoFrame * pVideoFrame1, *pVideoFrame2, *pVideoFrame3, *pVideoFrame4;
+    //MyVideoFrame * pVideoFrame1, *pVideoFrame2, *pVideoFrame3, *pVideoFrame4;
     // albert.liao ***
+#if ENABLE_DISPATCH_QUEUE_FOR_GLVIEW == 1
+    dispatch_async(_dispatchQueue, ^{
+#endif
     [myGLView clearFrameBuffer];
-    
+#if ENABLE_DISPATCH_QUEUE_FOR_GLVIEW == 1
+    });
+#endif
+            
     if(isStop)
     {
 		[timer invalidate];
@@ -424,13 +437,23 @@ NSMutableArray *myImage;
     
     // This function cost about 11ms in iPad2...
     // This is the bottle neck of GLView
-    pVideoFrame1 =[MyGLView CopyAVFrameToVideoFrame:self.video1->pFrame \
-                                            withWidth: self.video1->pFrame->width \
-                                            withHeight: self.video1->pFrame->height];
-
+    pVideoFrame1 =[MyGLView CopyFullAVFrameToVideoFrame:self.video1->pFrame \
+                                          withWidth: self.video1->pFrame->width \
+                                         withHeight: self.video1->pFrame->height];
+    
     vCopyFrameTime += [NSDate timeIntervalSinceReferenceDate]-vTmpTime;
     
+    
+#if ENABLE_DISPATCH_QUEUE_FOR_GLVIEW == 1
+    dispatch_async(_dispatchQueue, ^{
+#endif
+    
     [myGLView setFrame:pVideoFrame1 at:eLOC_TOP_LEFT];
+        
+#if ENABLE_DISPATCH_QUEUE_FOR_GLVIEW == 1
+    });
+#endif
+    
 
     vShowImageTime += [NSDate timeIntervalSinceReferenceDate]-vTmpTime;
     vShowImageNum++;
@@ -438,29 +461,44 @@ NSMutableArray *myImage;
     if(vRtspNum>=2)
     {
         [video2 stepFrame];
-        pVideoFrame2 =[MyGLView CopyAVFrameToVideoFrame:self.video2->pFrame \
+        pVideoFrame2 =[MyGLView CopyFullAVFrameToVideoFrame:self.video2->pFrame \
                                                                    withWidth: self.video2->pFrame->width \
                                                                   withHeight: self.video2->pFrame->height];
-        
-        [myGLView setFrame:pVideoFrame2 at:eLOC_TOP_RIGHT];
-        
+
+#if ENABLE_DISPATCH_QUEUE_FOR_GLVIEW == 1
+        dispatch_async(_dispatchQueue, ^{
+#endif
+            [myGLView setFrame:pVideoFrame2 at:eLOC_TOP_RIGHT];
+#if ENABLE_DISPATCH_QUEUE_FOR_GLVIEW == 1
+        });
+#endif
 
         if(vRtspNum==4)
         {
             [video3 stepFrame];
-            pVideoFrame3 =[MyGLView CopyAVFrameToVideoFrame:self.video1->pFrame \
+            pVideoFrame3 =[MyGLView CopyFullAVFrameToVideoFrame:self.video1->pFrame \
                                                                        withWidth: self.video1->pFrame->width \
                                                                       withHeight: self.video1->pFrame->height];
-            
-            [myGLView setFrame:pVideoFrame3 at:eLOC_BOTTOM_LEFT];
-            
+
+#if ENABLE_DISPATCH_QUEUE_FOR_GLVIEW == 1
+            dispatch_async(_dispatchQueue, ^{
+#endif
+                [myGLView setFrame:pVideoFrame3 at:eLOC_BOTTOM_LEFT];
+#if ENABLE_DISPATCH_QUEUE_FOR_GLVIEW == 1
+            });
+#endif
 
             [video4 stepFrame];
-            pVideoFrame4 =[MyGLView CopyAVFrameToVideoFrame:self.video1->pFrame \
+            pVideoFrame4 =[MyGLView CopyFullAVFrameToVideoFrame:self.video1->pFrame \
                                                                        withWidth: self.video1->pFrame->width \
                                                                       withHeight: self.video1->pFrame->height];
-            
-            [myGLView setFrame:pVideoFrame4 at:eLOC_BOTTOM_RIGHT];
+#if ENABLE_DISPATCH_QUEUE_FOR_GLVIEW == 1
+            dispatch_async(_dispatchQueue, ^{
+#endif
+                [myGLView setFrame:pVideoFrame4 at:eLOC_BOTTOM_RIGHT];
+#if ENABLE_DISPATCH_QUEUE_FOR_GLVIEW == 1
+            });
+#endif
         }
     }
 
@@ -502,7 +540,15 @@ NSMutableArray *myImage;
         vCopyFrameTime=0.0;
     }
     
-    [myGLView RenderToHardware:nil];
+    
+#if ENABLE_DISPATCH_QUEUE_FOR_GLVIEW == 1
+    dispatch_async(_dispatchQueue, ^{
+#endif
+        [myGLView RenderToHardware:nil];
+#if ENABLE_DISPATCH_QUEUE_FOR_GLVIEW == 1
+    });
+#endif
+    
 
 }
 

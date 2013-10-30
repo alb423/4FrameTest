@@ -31,8 +31,9 @@ typedef enum eRenderLoc {
 -(void)StartRenderLoop;
 - (void)clearFrameBuffer;
 -(void) setFrame: (MyVideoFrame *) frame at: (eRenderLocType) vLocation;
+- (void)setTexture: (MyVideoFrame *) frame at: (eRenderLocType) vLocation;
 
-+ (MyVideoFrame *) CopyAVFrameToVideoFrame: (AVFrame *) pFrameIn withWidth :(int) vWidth withHeight:(int) vHeight;
-
++ (MyVideoFrame *) CopyFullAVFrameToVideoFrame: (AVFrame *) pFrameIn withWidth :(int) vWidth withHeight:(int) vHeight;
++ (MyVideoFrame *) CopyHalfAVFrameToVideoFrame: (AVFrame *) pFrameIn withWidth :(int) vWidth withHeight:(int) vHeight;
 
 @end

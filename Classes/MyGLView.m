@@ -315,8 +315,8 @@ enum {
     UIImageView *disconnectImageView;
     
     
-    float fWidth;
-    float fHeight;
+    int iWidth;
+    int iHeight;
     int ScreenNumber;
 }
 
@@ -325,15 +325,16 @@ enum {
 	return [CAEAGLLayer class];
 }
 
-
+// frameWidth and frameHeight is used to caculate the scale factor
 - (id) initWithFrame:(CGRect)frame splitnumber:(int) vSplitNumber frameWidth:(float) w frameHeight:(float) h
 {
     self = [super initWithFrame:frame];
     if (self) {
 
         ScreenNumber = vSplitNumber;
-        fWidth = w;
-        fHeight = h;
+        iWidth = w;
+        iHeight = h;
+        
         
         _renderer = [[MyGLRenderer_YUV alloc] init];
         NSLog(@"MyGLRenderer_YUV alloc ok");
@@ -366,6 +367,14 @@ enum {
         glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &_backingWidth);
         glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &_backingHeight);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, _renderbuffer);
+        
+        
+        // Disable unused fucntion to speed up
+        glDisable(GL_DITHER);
+        glDisable(GL_BLEND);
+        glDisable(GL_STENCIL_TEST);
+        //glDisable(GL_TEXTURE_2D);
+        glDisable(GL_DEPTH_TEST);
         
         NSLog(@"init framebuffer %d:%d", _backingWidth, _backingHeight);
         
@@ -402,7 +411,7 @@ enum {
             _vertices[6] =  1.0f;  // x3
             _vertices[7] =  1.0f;  // y3
         }
-        else if(ScreenNumber==1)
+        else if(ScreenNumber==2)
         {
             _vertices[0] = -1.0f;  // x0
             _vertices[1] =  0.0f;  // y0
@@ -496,7 +505,7 @@ enum {
 	_context = nil;
 }
 
-//#if 1 //Yvonne. 10/3/2013 rotate 會產生新的GLView 物件, 故不需此func.
+
 - (void)layoutSubviews
 {
     glBindRenderbuffer(GL_RENDERBUFFER, _renderbuffer);
@@ -517,7 +526,6 @@ enum {
     [self updateVertices];
     [self render: nil];
 }
-//#endif
 
 - (void)setContentMode:(UIViewContentMode)contentMode
 {
@@ -584,21 +592,23 @@ exit:
 - (void)updateVertices
 {
     const BOOL fit      = (self.contentMode == UIViewContentModeScaleAspectFit);
-    
-#if 1//Yvonne.
-    const float width   = fWidth;
-    const float height  = fHeight;
-#else
-    const float width   = _decoder.frameWidth;
-    const float height  = _decoder.frameHeight;
-#endif
+    //BOOL fit      = (self.contentMode == UIViewContentModeScaleAspectFit);
+    const float width   = iWidth;
+    const float height  = iHeight;
     
     const float dH      = (float)_backingHeight / height;
     const float dW      = (float)_backingWidth	  / width;
+    
+    // Test
+    //fit = 1;
     const float dd      = fit ? MIN(dH, dW) : MAX(dH, dW);
     const float h       = (height * dd / (float)_backingHeight);
     const float w       = (width  * dd / (float)_backingWidth );
 
+    NSLog(@"updateVertices fit=%d, (%f,%f) (%d,%d)", fit, width, height, _backingWidth, _backingHeight);
+    NSLog(@"updateVertices w,h=(%f,%f) dw,dh=(%f,%f) dd=%f",w, h, dW, dH, dd);
+    
+#if 0
     if(ScreenNumber==1)
     {
         _vertices[0] = - w;
@@ -668,6 +678,7 @@ exit:
         _vertices[30] =  w;  // x3
         _vertices[31] =  0.0f;  // y3
     }
+#endif
 }
 
 
@@ -710,7 +721,7 @@ exit:
     
     if (frame) {
 
-        [_renderer setFrame:frame width:fWidth height:fHeight at:0];
+        [_renderer setFrame:frame width:iWidth height:iHeight at:0];
         //[_renderer setFrame:frame width:_backingWidth height:_backingHeight at:0];
 
     }
@@ -752,17 +763,35 @@ exit:
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
+- (void)setTexture: (MyVideoFrame *) frame at: (eRenderLocType) vLocation
+{
+    if (frame) {
+        //[_renderer setFrame:frame];
+        //[_renderer setFrame:frame width:fWidth height:fHeight at:0];
+        
+        [_renderer setFrame:frame width:frame.width height:frame.height at:0];
+        
+        //[_renderer setFrame:frame width:_backingWidth height:_backingHeight at:0];
+    }
+}
+
 // When multi-thread, we should avoid different thread access CurrentContext at the same time
 // Use operation queue...
 // drawToBuffer at location
 - (void)setFrame: (MyVideoFrame *) frame at: (eRenderLocType) vLocation
 {
     static const GLfloat texCoords[] = {
+#if 1
         0.0f, 1.0f,
         1.0f, 1.0f,
         0.0f, 0.0f,
         1.0f, 0.0f,
-        
+#else
+        0.0f, 0.5f,
+        0.5f, 0.5f,
+        0.0f, 0.0f,
+        0.5f, 0.0f,
+#endif
         0.0f, 1.0f,
         1.0f, 1.0f,
         0.0f, 0.0f,
@@ -784,14 +813,14 @@ exit:
     glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
     glViewport(0, 0, _backingWidth, _backingHeight);
     
-//    NSLog(@"_backingWidth, _backingHeight = (%d,%d)",_backingWidth, _backingHeight);
+//    NSLog(@" w,h = (%d,%d) (%d,%.d)",_backingWidth, _backingHeight, iWidth, iHeight);
 //    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 //    glClear(GL_COLOR_BUFFER_BIT);
 	glUseProgram(_program);
     
     if (frame) {
         //[_renderer setFrame:frame];
-        [_renderer setFrame:frame width:fWidth height:fHeight at:0];
+        [_renderer setFrame:frame width:iWidth height:iHeight at:0];
         //[_renderer setFrame:frame width:_backingWidth height:_backingHeight at:0];
     }
     
@@ -820,12 +849,16 @@ exit:
     // NSLog(@"setFrame at:%d",vLocation);
 }
 
-
 -(void)RenderToHardware:(NSTimer *)timer {
     //NSLog(@"RenderToHardware!!");
+    
+
     glBindRenderbuffer(GL_RENDERBUFFER, _renderbuffer);
     [_context presentRenderbuffer:GL_RENDERBUFFER];
     
+    //ENABLE_DISPATCH_QUEUE_FOR_GLVIEW
+    //glFlush();
+
 }
 
 -(void)StartRenderLoop
@@ -842,19 +875,17 @@ static NSData * copyFrameData(UInt8 *src, int linesize, int width, int height)
     width = MIN(linesize, width);
     NSMutableData *md = [NSMutableData dataWithLength: width * height];
     Byte *dst = md.mutableBytes;
-#if 0 // This can not enhance performance
-    memcpy(dst, src, width*height);
-#else
+
     for (NSUInteger i = 0; i < height; ++i) {
         memcpy(dst, src, width);
         dst += width;
         src += linesize;
     }
-#endif
+
     return md;
 }
 
-+ (MyVideoFrame *) CopyAVFrameToVideoFrame: (AVFrame *) pFrameIn withWidth :(int) vWidth withHeight:(int) vHeight
++ (MyVideoFrame *) CopyFullAVFrameToVideoFrame: (AVFrame *) pFrameIn withWidth :(int) vWidth withHeight:(int) vHeight
 {
     if (!pFrameIn->data[0])
     {
@@ -887,6 +918,54 @@ static NSData * copyFrameData(UInt8 *src, int linesize, int width, int height)
     return yuvFrame;
 }
 
+static NSData * copyHalfFrameData(UInt8 *src, int linesize, int width, int height)
+{
+    width = MIN(linesize, width);
+    NSMutableData *md = [NSMutableData dataWithLength: width * height/2];
+    Byte *dst = md.mutableBytes;
+
+    for (NSUInteger i = 0; i < height/2; ) {
+        if(i%1==1) continue;
+        memcpy(dst, src, width);
+        dst += width;
+        src += linesize;
+        i++;
+    }
+    return md;
+}
+
++ (MyVideoFrame *) CopyHalfAVFrameToVideoFrame: (AVFrame *) pFrameIn withWidth :(int) vWidth withHeight:(int) vHeight
+{
+    if (!pFrameIn->data[0])
+    {
+        NSLog(@"CopyAVFrameToVideoFrame return nil");
+        return nil;
+    }
+    
+    MyVideoFrame *yuvFrame = [[MyVideoFrame alloc] init];
+    
+    //yuvFrame.luma.bytes = pFrameIn->data[0];
+    yuvFrame.luma = copyHalfFrameData(pFrameIn->data[0],
+                                  pFrameIn->linesize[0],
+                                  vWidth,
+                                  vHeight);
+    
+    yuvFrame.chromaB = copyHalfFrameData(pFrameIn->data[1],
+                                     pFrameIn->linesize[1],
+                                     vWidth / 2,
+                                     vHeight / 2);
+    
+    yuvFrame.chromaR = copyHalfFrameData(pFrameIn->data[2],
+                                     pFrameIn->linesize[2],
+                                     vWidth / 2,
+                                     vHeight / 2);
+    
+    yuvFrame.width = vWidth;
+    yuvFrame.height = vHeight/2;
+    
+    
+    return yuvFrame;
+}
 
 @end
 
