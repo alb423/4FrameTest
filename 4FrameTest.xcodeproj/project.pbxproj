@@ -28,6 +28,8 @@
 		9A0B403B1813C9BD00770E5E /* libiconv.2.4.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 9A0B403A1813C9BD00770E5E /* libiconv.2.4.0.dylib */; };
 		9A53E8DA181E5707006A611B /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9A53E8D9181E5707006A611B /* OpenGLES.framework */; };
 		9A53E8DC181E5721006A611B /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9A53E8DB181E5721006A611B /* QuartzCore.framework */; };
+		9A6F669D1835AD6700E276DB /* IMG_0292_moovHead.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 9A6F669C1835AD6700E276DB /* IMG_0292_moovHead.mp4 */; };
+		9ACD2AF818307FD600DEBAD9 /* IMG_0292.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 9ACD2AF718307FD600DEBAD9 /* IMG_0292.mp4 */; };
 		B20DF6A7182002920092A989 /* MyGLView.m in Sources */ = {isa = PBXBuildFile; fileRef = B20DF6A5182002920092A989 /* MyGLView.m */; };
 		B23373E716DEFA1300F5DE7F /* 7h800.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = B23373E616DEFA1300F5DE7F /* 7h800.mp4 */; };
 		B23373F516DF0E1100F5DE7F /* 1x1-iPad-l.png in Resources */ = {isa = PBXBuildFile; fileRef = B23373E916DF0E1000F5DE7F /* 1x1-iPad-l.png */; };
@@ -76,6 +78,8 @@
 		9A0B403A1813C9BD00770E5E /* libiconv.2.4.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libiconv.2.4.0.dylib; path = usr/lib/libiconv.2.4.0.dylib; sourceTree = SDKROOT; };
 		9A53E8D9181E5707006A611B /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
 		9A53E8DB181E5721006A611B /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		9A6F669C1835AD6700E276DB /* IMG_0292_moovHead.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = IMG_0292_moovHead.mp4; sourceTree = "<group>"; };
+		9ACD2AF718307FD600DEBAD9 /* IMG_0292.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = IMG_0292.mp4; sourceTree = "<group>"; };
 		B20DF6A5182002920092A989 /* MyGLView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MyGLView.m; sourceTree = "<group>"; };
 		B20DF6A6182002920092A989 /* MyGLView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyGLView.h; sourceTree = "<group>"; };
 		B23373E616DEFA1300F5DE7F /* 7h800.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = 7h800.mp4; sourceTree = "<group>"; };
@@ -185,6 +189,8 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				9A6F669C1835AD6700E276DB /* IMG_0292_moovHead.mp4 */,
+				9ACD2AF718307FD600DEBAD9 /* IMG_0292.mp4 */,
 				B23758A016E7992300E43B4E /* 7h800-2.mp4 */,
 				B23758A116E7992300E43B4E /* 7h800-3.mp4 */,
 				B23758A216E7992300E43B4E /* 7h800-4.mp4 */,
@@ -302,8 +308,10 @@
 				B23373F616DF0E1100F5DE7F /* 1x1-iPad-p.png in Resources */,
 				B23373F716DF0E1100F5DE7F /* 1x1-iPhone-l.png in Resources */,
 				B23373F816DF0E1100F5DE7F /* 1x1-iPhone-p.png in Resources */,
+				9ACD2AF818307FD600DEBAD9 /* IMG_0292.mp4 in Resources */,
 				B23373F916DF0E1100F5DE7F /* 1x2-iPad-l.png in Resources */,
 				B23373FA16DF0E1100F5DE7F /* 1x2-iPad-p.png in Resources */,
+				9A6F669D1835AD6700E276DB /* IMG_0292_moovHead.mp4 in Resources */,
 				B23373FB16DF0E1100F5DE7F /* 1x2-iPhone-l.png in Resources */,
 				B23373FC16DF0E1100F5DE7F /* 1x2-iPhone-p.png in Resources */,
 				B23373FD16DF0E1100F5DE7F /* 2x2-iPad-l.png in Resources */,
@@ -403,7 +411,10 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/ffmpeg/compiled/armv7-neon/lib\"",
 				);
-				"LIBRARY_SEARCH_PATHS[sdk=iphonesimulator*]" = "";
+				"LIBRARY_SEARCH_PATHS[sdk=iphonesimulator*][arch=armv7s]" = (
+					"$(inherited)",
+					"\"$(SRCROOT)/ffmpeg/compiled/armv7s-neon/lib\"",
+				);
 				LLVM_VECTORIZE_LOOPS = NO;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "rtsp-home";
@@ -417,7 +428,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				"CODE_SIGN_ENTITLEMENTS[sdk=*]" = "";
-				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
@@ -433,7 +444,7 @@
 		C01FCF5008A954540054247B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;

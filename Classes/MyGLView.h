@@ -1,5 +1,7 @@
 
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+#import <GLKit/GLKit.h>
 #include "libavformat/avformat.h"
 #include "libswscale/swscale.h"
 #include "libavcodec/avcodec.h"
@@ -34,6 +36,5 @@ typedef enum eRenderLoc {
 - (void) setAVFrame: (AVFrame *) frame at: (eRenderLocType) vLocation;
 
 + (MyVideoFrame *) CopyFullAVFrameToVideoFrame: (AVFrame *) pFrameIn withWidth :(int) vWidth withHeight:(int) vHeight;
-+ (MyVideoFrame *) CopyHalfAVFrameToVideoFrame: (AVFrame *) pFrameIn withWidth :(int) vWidth withHeight:(int) vHeight;
 
 @end

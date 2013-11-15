@@ -11,6 +11,7 @@
 
 #pragma mark - shaders
 
+#define ENABLE_YUV_SACLE_BEFORE_RENDER 0
 #define STRINGIZE(x) #x
 #define STRINGIZE2(x) STRINGIZE(x)
 #define SHADER_STRING(text) @ STRINGIZE2(text)
@@ -19,12 +20,20 @@ NSString *const VSaaS_vertexShaderString = SHADER_STRING
 (
  attribute vec4 position;
  attribute vec2 texcoord;
+ attribute vec4 position_shift;
  uniform mat4 modelViewProjectionMatrix;
  varying vec2 v_texcoord;
  
  void main()
  {
      gl_Position = modelViewProjectionMatrix * position;
+     
+     // Change the gl_Position can change the texture location
+     // gl_Position.x += 0.1;
+//     gl_Position += position_shift;
+//     gl_Position.x += position_shift.x;
+//     gl_Position.y += position_shift.y;
+     
      v_texcoord = texcoord.xy;
  }
  );
@@ -112,6 +121,7 @@ static GLuint compileShader(GLenum type, NSString *shaderString)
     
 	return shader;
 }
+
 
 static void mat4f_LoadOrtho(float left, float right, float bottom, float top, float near, float far, float* mout)
 {
@@ -298,6 +308,7 @@ static void mat4f_LoadOrtho(float left, float right, float bottom, float top, fl
 enum {
 	ATTRIBUTE_VERTEX,
    	ATTRIBUTE_TEXCOORD,
+    ATTRIBUTE_POS_SHIFT,
 };
 
 @implementation MyGLView {
@@ -322,13 +333,27 @@ enum {
     GLuint pTmpTextures[3];
     UInt8  pTmpPixels[3][1280*720]; // For max resolution 720p
     GLint  pTmpUniformSamplers[3];
-
+    
+#if ENABLE_YUV_SACLE_BEFORE_RENDER == 1
+    // Scale YUV to smaller size before render
+    AVPicture picture;
+    struct SwsContext *img_convert_ctx;
+    GLint           outputWidth;
+    GLint           outputHeight;
+#endif
+    
+    // For Scale and Roate for single screen
+    GLfloat ScaleFactor;
+    GLfloat SwipeFactor_X;
+    GLfloat SwipeFactor_Y;
 }
 
 + (Class) layerClass
 {
 	return [CAEAGLLayer class];
 }
+
+
 
 // frameWidth and frameHeight is used to caculate the scale factor
 - (id) initWithFrame:(CGRect)frame splitnumber:(int) vSplitNumber frameWidth:(float) w frameHeight:(float) h
@@ -476,9 +501,77 @@ enum {
         }
         
         //[self StartRenderLoop];
-
+        
+        
+#if ENABLE_YUV_SACLE_BEFORE_RENDER == 1
+        // For YUV Scale
+        // Release old picture and scaler
+        avpicture_free(&picture);
+        sws_freeContext(img_convert_ctx);
+        
+        // Allocate RGB picture
+        outputWidth = iWidth/4;
+        outputHeight = iHeight/4;
+        avpicture_alloc(&picture, PIX_FMT_YUV420P, outputWidth, outputHeight);
+        
+        // Setup scaler
+        img_convert_ctx = sws_getContext(iWidth,
+                                         iHeight,
+                                         PIX_FMT_YUV420P,
+                                         outputWidth,
+                                         outputHeight,
+                                         PIX_FMT_YUV420P,
+                                         SWS_FAST_BILINEAR, NULL, NULL, NULL);
+#endif
     }
     
+    
+    // support gesture recognization
+    ScaleFactor = 1.0;
+    SwipeFactor_X = 0.0;
+    SwipeFactor_Y = 0.0;
+    if(ScreenNumber==1)
+    {
+        [self setUserInteractionEnabled:YES];
+        
+        UITapGestureRecognizer *tapper = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapHandler:)];
+        tapper.numberOfTapsRequired = 2;
+        [self addGestureRecognizer:tapper];
+
+        
+        UIPinchGestureRecognizer *pincher = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(pinchHandler:)];
+        [self addGestureRecognizer:pincher];
+        
+        UIPanGestureRecognizer *PanSwiper = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panHandler:)];
+        [PanSwiper setMinimumNumberOfTouches:1];
+        [self addGestureRecognizer:PanSwiper];
+        
+#if 0
+        UISwipeGestureRecognizer *LeftSwiper = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(swipeHandler:)];
+        LeftSwiper.direction = UISwipeGestureRecognizerDirectionLeft;
+        [self addGestureRecognizer:LeftSwiper];
+        
+        UISwipeGestureRecognizer *RightSwiper = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(swipeHandler:)];
+        RightSwiper.direction = UISwipeGestureRecognizerDirectionRight;
+        [self addGestureRecognizer:RightSwiper];
+        
+        UISwipeGestureRecognizer *UpSwiper = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(swipeHandler:)];
+        UpSwiper.direction = UISwipeGestureRecognizerDirectionUp;
+        [self addGestureRecognizer:UpSwiper];
+        
+        UISwipeGestureRecognizer *DownSwiper = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(swipeHandler:)];
+        DownSwiper.direction = UISwipeGestureRecognizerDirectionDown;
+        [self addGestureRecognizer:DownSwiper];
+        
+        UILongPressGestureRecognizer *longpresser = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(longPressHandler:)];
+        [self addGestureRecognizer:longpresser];
+        
+        UIRotationGestureRecognizer *rotater = [[UIRotationGestureRecognizer alloc] initWithTarget:self action:@selector(rotateHandler:)];
+        [self addGestureRecognizer:rotater];
+
+#endif
+
+    }
     return self;
 }
 
@@ -507,6 +600,13 @@ enum {
 		[EAGLContext setCurrentContext:nil];
 	}
     
+#if ENABLE_YUV_SACLE_BEFORE_RENDER == 1
+	// Free scaler
+	sws_freeContext(img_convert_ctx);
+    
+	// Free YUV picture
+	avpicture_free(&picture);
+#endif
 	_context = nil;
 }
 
@@ -545,6 +645,7 @@ enum {
     BOOL result = NO;
     GLuint vertShader = 0, fragShader = 0;
     
+    
 	_program = glCreateProgram();
 	
     vertShader = compileShader(GL_VERTEX_SHADER, VSaaS_vertexShaderString);
@@ -559,6 +660,8 @@ enum {
 	glAttachShader(_program, fragShader);
 	glBindAttribLocation(_program, ATTRIBUTE_VERTEX, "position");
     glBindAttribLocation(_program, ATTRIBUTE_TEXCOORD, "texcoord");
+    glBindAttribLocation(_program, ATTRIBUTE_POS_SHIFT, "position_shift");
+    
 	
 	glLinkProgram(_program);
     
@@ -571,8 +674,15 @@ enum {
     
     result = validateProgram(_program);
     
+    // 20131106 test
+    glUseProgram(_program);
+    pTmpUniformSamplers[0] = glGetUniformLocation(_program, "s_texture_y");
+    pTmpUniformSamplers[1] = glGetUniformLocation(_program, "s_texture_u");
+    pTmpUniformSamplers[2] = glGetUniformLocation(_program, "s_texture_v");
+    
     _uniformMatrix = glGetUniformLocation(_program, "modelViewProjectionMatrix");
-    [_renderer resolveUniforms:_program];
+    //GLKMatrix4Multiply(_uniformMatrix, GLKMatrix4MakeScale(0.5, 0.5, 1));
+    //[_renderer resolveUniforms:_program];
 	
 exit:
     
@@ -600,6 +710,7 @@ exit:
     //BOOL fit      = (self.contentMode == UIViewContentModeScaleAspectFit);
     const float width   = iWidth;
     const float height  = iHeight;
+
     
     const float dH      = (float)_backingHeight / height;
     const float dW      = (float)_backingWidth	  / width;
@@ -607,11 +718,36 @@ exit:
     // Test
     //fit = 1;
     const float dd      = fit ? MIN(dH, dW) : MAX(dH, dW);
+    
     const float h       = (height * dd / (float)_backingHeight);
-    const float w       = (width  * dd / (float)_backingWidth );
-
+    float w       = (width  * dd / (float)_backingWidth );
+    
+    
     NSLog(@"updateVertices fit=%d, (%f,%f) (%d,%d)", fit, width, height, _backingWidth, _backingHeight);
     NSLog(@"updateVertices w,h=(%f,%f) dw,dh=(%f,%f) dd=%f",w, h, dW, dH, dd);
+    
+
+//    // rotate to landscap
+//    int vTest = 1; // SwipeFactor_X
+//    _vertices[0] = - w*vTest - SwipeFactor_X; // Shift to Left
+//    _vertices[1] = - h*vTest;   // Shift to Up
+//    _vertices[2] =   w*vTest ;   // Shift to Right
+//    _vertices[3] = - h*vTest ;   // Shift to Down
+//    _vertices[4] = - w*vTest - SwipeFactor_X; // Shift to Left
+//    _vertices[5] =   h*vTest;   // Shift to Up
+//    _vertices[6] =   w*vTest;   // Shift to Right
+//    _vertices[7] =   h*vTest;   // Shift to Down
+    
+#if 0
+    _vertices[0] =   1;
+    _vertices[1] =  -1;
+    _vertices[2] =   1;
+    _vertices[3] =   1;
+    _vertices[4] =  -1;
+    _vertices[5] =  -1;
+    _vertices[6] =  -1;
+    _vertices[7] =   1;
+#endif
     
 #if 0
     if(ScreenNumber==1)
@@ -719,7 +855,8 @@ exit:
     [EAGLContext setCurrentContext:_context];
     
     glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
-    glViewport(0, 0, _backingWidth, _backingHeight);
+    glViewport(-1, -1, _backingWidth, _backingHeight);
+    //glViewport(0, 0, _backingHeight, _backingWidth);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 	glUseProgram(_program);
@@ -843,9 +980,12 @@ exit:
     // NSLog(@"setFrame at:%d",vLocation);
 }
 
+// TODO: caculate the offset of swipe
+// TODO: to avoid the texture render over the frame range
+// Reference http://stackoverflow.com/questions/8342164/ios-uiswipegesturerecognizer-calculate-offset
 - (void)setAVFrame: (AVFrame *) frame at: (eRenderLocType) vLocation
 {
-    static const GLfloat texCoords[] = {
+    static GLfloat texCoords[] = {
         0.0f, 1.0f,
         1.0f, 1.0f,
         0.0f, 0.0f,
@@ -873,7 +1013,14 @@ exit:
     [EAGLContext setCurrentContext:_context];
     
     //glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
-    //glViewport(0, 0, _backingWidth, _backingHeight);
+    glViewport(0, 0, _backingWidth, _backingHeight);
+//    int offset=50;
+//    glViewport(0+SwipeFactor_X*offset,
+//               0+SwipeFactor_Y*offset,
+//               _backingWidth+SwipeFactor_X*offset,
+//               _backingHeight+SwipeFactor_Y*offset);
+    
+    
     
 //	NSLog(@" w,h = (%d,%d) (%d,%.d)",_backingWidth, _backingHeight, iWidth, iHeight);
 //	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -885,19 +1032,69 @@ exit:
     {
         const NSUInteger frameWidth = frame->width;
         const NSUInteger frameHeight = frame->height;
-        const NSUInteger widths[3]  = { frameWidth, frameWidth / 2, frameWidth / 2 };
-        const NSUInteger heights[3] = { frameHeight, frameHeight / 2, frameHeight / 2 };
         
+#if ENABLE_YUV_SACLE_BEFORE_RENDER == 1
+        NSUInteger widths[3]  = { outputWidth, outputWidth / 2, outputWidth / 2 };
+        NSUInteger heights[3] = { outputHeight, outputHeight / 2, outputHeight / 2 };
+#else
+        NSUInteger widths[3]  = { frameWidth, frameWidth / 2, frameWidth / 2 };
+        NSUInteger heights[3] = { frameHeight, frameHeight / 2, frameHeight / 2 };
+#endif
+        
+        int vTmp = 0;
         
         // If the source data is not 4 byte alignment, we should set GL_UNPACK_ALIGNMENT
-        //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 2); //better
-
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        //glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        //glPixelStorei(GL_UNPACK_ALIGNMENT, 2); //better
+        
         // reference http://www.zwqxin.com/archives/opengl/opengl-api-memorandum-2.html
         
         if (0 == pTmpTextures[0])
-            glGenTextures(3, pTmpTextures);
-
+            glGenTextures(12, pTmpTextures);
+        
+        
+#if ENABLE_YUV_SACLE_BEFORE_RENDER == 1
+        // scale YUV before assign to a texture
+        sws_scale (img_convert_ctx, frame->data, frame->linesize,
+                   0, iHeight,
+                   picture.data, picture.linesize);
+        {
+            int i=0,j=0;
+            UInt8 *pTmp = NULL, *pSrc = NULL;
+            
+            i = 0;
+            widths[i] = MIN(picture.linesize[i], widths[i]);
+            pSrc = picture.data[i];
+            pTmp = pTmpPixels[i];
+            for (j = 0; j < heights[i]; ++j) {
+                memcpy(pTmp, pSrc, widths[i]);
+                pTmp += widths[i];
+                pSrc += picture.linesize[i];
+            }
+            
+            i = 1;
+            widths[i] = MIN(picture.linesize[i], widths[i]);
+            pSrc = picture.data[i];
+            pTmp = pTmpPixels[i];
+            for (j = 0; j < heights[i]; ++j) {
+                memcpy(pTmp, pSrc, widths[i]);
+                pTmp += widths[i];
+                pSrc += picture.linesize[i];
+            }
+            
+            i = 2;
+            widths[i] = MIN(picture.linesize[i], widths[i]);
+            pSrc = picture.data[i];
+            pTmp = pTmpPixels[i];
+            for (j = 0; j < heights[i]; ++j) {
+                memcpy(pTmp, pSrc, widths[i]);
+                pTmp += widths[i];
+                pSrc += picture.linesize[i];
+            }
+            //NSLog(@" linesize=(%d,%d,%d)",frame->linesize[0],frame->linesize[1],frame->linesize[2]);
+        }
+#else
         // Unroll the loop to speed up
         // In iPAD2, below need 4~5 ms
         {
@@ -936,32 +1133,13 @@ exit:
             }
             //NSLog(@" linesize=(%d,%d,%d)",frame->linesize[0],frame->linesize[1],frame->linesize[2]);
         }
+#endif
         
         // In iPAD2, below need 4~5 ms
-#if 0
-        for (int i = 0; i < 3; ++i)
-        {
-            glBindTexture(GL_TEXTURE_2D, pTmpTextures[i]);
-            
-            glTexImage2D(GL_TEXTURE_2D,
-                         0,
-                         GL_LUMINANCE,
-                         widths[i],
-                         heights[i],
-                         0,
-                         GL_LUMINANCE,
-                         GL_UNSIGNED_BYTE,
-                         pTmpPixels[i]);
-            
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        }
-#else
         {
             int i = 0;
-            glBindTexture(GL_TEXTURE_2D, pTmpTextures[i]);
+            
+            glBindTexture(GL_TEXTURE_2D, pTmpTextures[i+vTmp]);
             
             glTexImage2D(GL_TEXTURE_2D,
                          0,
@@ -979,7 +1157,7 @@ exit:
             glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             
             i = 1;
-            glBindTexture(GL_TEXTURE_2D, pTmpTextures[i]);
+            glBindTexture(GL_TEXTURE_2D, pTmpTextures[i+vTmp]);
             
             glTexImage2D(GL_TEXTURE_2D,
                          0,
@@ -997,7 +1175,7 @@ exit:
             glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             
             i = 2;
-            glBindTexture(GL_TEXTURE_2D, pTmpTextures[i]);
+            glBindTexture(GL_TEXTURE_2D, pTmpTextures[i+vTmp]);
             
             glTexImage2D(GL_TEXTURE_2D,
                          0,
@@ -1014,18 +1192,17 @@ exit:
             glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         }
-#endif
-        
     }
 
 
 //    vTmpTime = [NSDate timeIntervalSinceReferenceDate]-vTmpTime;
 //    NSLog(@"vTmpTime = %f",vTmpTime);
-    
-    glUseProgram(_program);
-    pTmpUniformSamplers[0] = glGetUniformLocation(_program, "s_texture_y");
-    pTmpUniformSamplers[1] = glGetUniformLocation(_program, "s_texture_u");
-    pTmpUniformSamplers[2] = glGetUniformLocation(_program, "s_texture_v");
+ 
+    // 20131106 test
+    //glUseProgram(_program);
+//    pTmpUniformSamplers[0] = glGetUniformLocation(_program, "s_texture_y");
+//    pTmpUniformSamplers[1] = glGetUniformLocation(_program, "s_texture_u");
+//    pTmpUniformSamplers[2] = glGetUniformLocation(_program, "s_texture_v");
     
     for (int i = 0; i < 3; ++i) {
         glActiveTexture(GL_TEXTURE0 + i);
@@ -1035,14 +1212,75 @@ exit:
     
     {
         GLfloat modelviewProj[16];
-        mat4f_LoadOrtho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f, modelviewProj);
+        
+        // update the matrix, this can be used to scale
+        if(ScreenNumber==1)
+        {
+            float vTmp = 1.0f;
+
+            vTmp = ScaleFactor;
+            mat4f_LoadOrtho(-1.0f/vTmp, 1.0f/vTmp, -1.0f/vTmp, 1.0f/vTmp, -1.0f, 1.0f, modelviewProj);
+            //mat4f_LoadOrtho(-1.0f*vTmp, 1.0f*vTmp, -1.0f*vTmp, 1.0f*vTmp, -1.0f, 1.0f, modelviewProj);
+
+        }
+        else
+        {
+            mat4f_LoadOrtho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f, modelviewProj);
+        }
         glUniformMatrix4fv(_uniformMatrix, 1, GL_FALSE, modelviewProj);
+        //glUniform4fv(<#GLint location#>, <#GLsizei count#>, <#const GLfloat *v#>)
+        
         
         glVertexAttribPointer(ATTRIBUTE_VERTEX, 2, GL_FLOAT, 0, 0, _vertices);
         glEnableVertexAttribArray(ATTRIBUTE_VERTEX);
+        
+        
+        // TODO: avoid the texture is over bound
+        // transmit
+        int vTest = 1; // SwipeFactor_X
+        
+        // TODO: check the boundary,
+        // If we meet the texture boundary, we should not move.
+        //if( fabsf(SwipeFactor_X) < 20)
+        //NSLog(@"Check %f %f, %f", fabsf(SwipeFactor_X*0.01), fabsf(SwipeFactor_Y*0.01), 1/fabsf(ScaleFactor));
+        
+        // SwipeFactor_X*0.01 is the right bound
+        // SwipeFactor_X*0.01*-1 is the left bound
+        //if(ScaleFactor>1)
+        {
+//            // This operation should be modified by a matrix operation
+//            texCoords[0] =  0 - SwipeFactor_X*0.01; // Shift to Left
+//            texCoords[1] =  vTest + SwipeFactor_Y*0.01;   // Shift to Up
+//            texCoords[2] =  vTest - SwipeFactor_X*0.01;   // Shift to Right
+//            texCoords[3] =  vTest + SwipeFactor_Y*0.01;   // Shift to Down
+//            texCoords[4] =  0 - SwipeFactor_X*0.01; // Shift to Left
+//            texCoords[5] =  0 + SwipeFactor_Y*0.01;   // Shift to Up
+//            texCoords[6] =  vTest - SwipeFactor_X*0.01;   // Shift to Right
+//            texCoords[7] =  0 + SwipeFactor_Y*0.01;   // Shift to Down
+            
+            if( fabsf(SwipeFactor_X*0.01)*2 < 1/fabsf(ScaleFactor))
+            {
+                // This operation should be modified by a matrix operation
+                texCoords[0] =  0 - SwipeFactor_X*0.01; // Shift to Left
+                texCoords[2] =  vTest - SwipeFactor_X*0.01;   // Shift to Right
+                texCoords[4] =  0 - SwipeFactor_X*0.01; // Shift to Left
+                texCoords[6] =  vTest - SwipeFactor_X*0.01;   // Shift to Right
+            }
+            
+            if( fabsf(SwipeFactor_Y*0.01)*2 < 1/fabsf(ScaleFactor))
+            {
+                // This operation should be modified by a matrix operation
+                texCoords[1] =  vTest + SwipeFactor_Y*0.01;   // Shift to Up
+                texCoords[3] =  vTest + SwipeFactor_Y*0.01;   // Shift to Down
+                texCoords[5] =  0 + SwipeFactor_Y*0.01;   // Shift to Up
+                texCoords[7] =  0 + SwipeFactor_Y*0.01;   // Shift to Down
+            }
+        }
         glVertexAttribPointer(ATTRIBUTE_TEXCOORD, 2, GL_FLOAT, 0, 0, texCoords);
         glEnableVertexAttribArray(ATTRIBUTE_TEXCOORD);
         
+        
+        // 20131108
         if(eLOC_TOP_LEFT == vLocation)
             glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         else if(eLOC_TOP_RIGHT == vLocation)
@@ -1132,53 +1370,100 @@ static NSData * copyFrameData(UInt8 *src, int linesize, int width, int height)
     return yuvFrame;
 }
 
-static NSData * copyHalfFrameData(UInt8 *src, int linesize, int width, int height)
-{
-    width = MIN(linesize, width);
-    NSMutableData *md = [NSMutableData dataWithLength: width * height/2];
-    Byte *dst = md.mutableBytes;
+#pragma mark - Gesture Handler
 
-    for (NSUInteger i = 0; i < height/2; ) {
-        if(i%1==1) continue;
-        memcpy(dst, src, width);
-        dst += width;
-        src += linesize;
-        i++;
-    }
-    return md;
+- (void) rotateHandler:(id)sender
+{
+    NSLog(@"ROTATE!");
 }
 
-+ (MyVideoFrame *) CopyHalfAVFrameToVideoFrame: (AVFrame *) pFrameIn withWidth :(int) vWidth withHeight:(int) vHeight
+- (void) tapHandler:(id)sender
 {
-    if (!pFrameIn->data[0])
+    ScaleFactor = 1.0f;
+    SwipeFactor_X = 0.0f;
+    SwipeFactor_Y = 0.0f;
+    NSLog(@"Double TAP!");
+}
+
+- (void) longPressHandler:(UILongPressGestureRecognizer *)sender
+{
+    ScaleFactor = 1.0f;
+    SwipeFactor_X = 0.0f;
+    SwipeFactor_Y = 0.0f;
+    NSLog(@"LONG PRESS!");
+}
+
+- (void) pinchHandler:(UIPinchGestureRecognizer *)sender
+{
+//    static float old = 0.0f;
+//
+//    if(sender.scale == 1)
+//        old = ScaleFactor-1.0f;
+//
+//    ScaleFactor = old + sender.scale;
+//    
+    // zoom in/out
+    if((sender.scale>0.2) && (sender.scale<5))
+        ScaleFactor = sender.scale;
+    NSLog(@"PICH %0.2f! %0.2f", sender.scale, ScaleFactor);
+}
+
+- (void) swipeHandler:(UISwipeGestureRecognizer *)sender
+{
+    if(sender.direction == UISwipeGestureRecognizerDirectionRight)
     {
-        NSLog(@"CopyAVFrameToVideoFrame return nil");
-        return nil;
+        NSLog(@"SWIPE Right");
+    }
+    if(sender.direction == UISwipeGestureRecognizerDirectionLeft)
+    {
+        NSLog(@"SWIPE Left");
+    }
+    if(sender.direction == UISwipeGestureRecognizerDirectionUp)
+    {
+        NSLog(@"SWIPE Up");
+    }
+    if(sender.direction == UISwipeGestureRecognizerDirectionDown)
+    {
+        NSLog(@"SWIPE Down");
+    }
+}
+
+-(void) panHandler:(UIPanGestureRecognizer *)sender
+{
+    static CGFloat startX, startY;
+    
+    if([(UIPanGestureRecognizer*)sender state] == UIGestureRecognizerStateChanged) {
+        
+        CGPoint tp = [(UIPanGestureRecognizer*)sender locationInView:self.superview];
+        CGFloat delX = tp.x - startX;
+        CGFloat delY = - tp.y + startY;
+        startX = tp.x; startY = tp.y;
+        
+        if( fabsf(delX) > fabsf(delY) )
+        {
+            if(delX>0)
+                SwipeFactor_X++;
+            else
+                SwipeFactor_X--;
+        }
+        else
+        {
+            if(delY>0)
+                SwipeFactor_Y++;
+            else
+                SwipeFactor_Y--;
+        }
+        
+        //NSLog(@"start(x,y)=%f,%f, del(x,y)=%f,%f",startX,startY,delX,delY);
+        //[layer tellWorldToSpinIt:delX:delY]; //CALL THE FUNCTION
     }
     
-    MyVideoFrame *yuvFrame = [[MyVideoFrame alloc] init];
-    
-    //yuvFrame.luma.bytes = pFrameIn->data[0];
-    yuvFrame.luma = copyHalfFrameData(pFrameIn->data[0],
-                                  pFrameIn->linesize[0],
-                                  vWidth,
-                                  vHeight);
-    
-    yuvFrame.chromaB = copyHalfFrameData(pFrameIn->data[1],
-                                     pFrameIn->linesize[1],
-                                     vWidth / 2,
-                                     vHeight / 2);
-    
-    yuvFrame.chromaR = copyHalfFrameData(pFrameIn->data[2],
-                                     pFrameIn->linesize[2],
-                                     vWidth / 2,
-                                     vHeight / 2);
-    
-    yuvFrame.width = vWidth;
-    yuvFrame.height = vHeight/2;
-    
-    
-    return yuvFrame;
+    if([(UIPanGestureRecognizer*)sender state] == UIGestureRecognizerStateBegan) {
+        CGPoint tp = [(UIPanGestureRecognizer*)sender locationInView:self.superview];//[director openGLView]];
+        startX = tp.x;
+        startY = tp.y;
+        NSLog(@"start(x,y)=%f,%f",startX,startY);
+    }
 }
 
 @end

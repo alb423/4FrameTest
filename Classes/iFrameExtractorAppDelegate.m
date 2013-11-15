@@ -30,7 +30,7 @@
 
 
 // Configuration
-#define PLAY_MEHTOD PLAY_MEMORY_FILE // PLAY_MEMORY_FILE, PLAY_REMOTE_FILE
+#define PLAY_MEHTOD PLAY_REMOTE_FILE // PLAY_MEMORY_FILE, PLAY_REMOTE_FILE
 #define RENDER_BY_OPENGLES 1
 #define ENABLE_DISPATCH_QUEUE_FOR_GLVIEW 0 // enable will cause crash
 
@@ -38,7 +38,9 @@
 
 #if PLAY_MEHTOD == PLAY_MEMORY_FILE
 
-#define VIDEO_SRC1 @"7h800.mp4"
+#define VIDEO_SRC1 @"IMG_0292.mp4"
+//#define VIDEO_SRC1 @"IMG_0292_moovHead.mp4"
+//#define VIDEO_SRC1 @"7h800.mp4"
 #define VIDEO_SRC2 @"7h800-2.mp4"
 #define VIDEO_SRC3 @"7h800-3.mp4"
 #define VIDEO_SRC4 @"7h800-4.mp4"
@@ -49,8 +51,10 @@
 //#define VIDEO_SRC3 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
 //#define VIDEO_SRC4 @"rtsp://mm2.pcslab.com/mm/7h800.mp4"
 
-#define VIDEO_SRC1 @"rtsp://210.65.250.18:80/cam000b67014ff4001/20131025/094606.mp4"
-#define VIDEO_SRC2 @"rtsp://210.65.250.18:80/cam000b67014ff4001/20131025/094606.mp4"
+#define VIDEO_SRC1 @"rtsp://192.168.82.75/stream2"
+#define VIDEO_SRC2 @"rtsp://192.168.82.75/stream2"
+//#define VIDEO_SRC1 @"rtsp://210.65.250.18:80/cam000b67014ff4001/20131025/094606.mp4"
+//#define VIDEO_SRC2 @"rtsp://210.65.250.18:80/cam000b67014ff4001/20131025/094606.mp4"
 #define VIDEO_SRC3 @"rtsp://210.65.250.18:80/cam000b67014ff4001/20131025/094606.mp4"
 #define VIDEO_SRC4 @"rtsp://210.65.250.18:80/cam000b67014ff4001/20131025/094606.mp4"
 
@@ -70,10 +74,10 @@ int vRtspNum = 1;
 int isStop =0;
 
 int   vDecodeNum = 0;
-float vDecodeTime = 0.0;
-float vCopyFrameTime = 0.0;
+double vDecodeTime = 0.0;
+double vCopyFrameTime = 0.0;
 int   vShowImageNum = 0;
-float vShowImageTime = 0.0;
+double vShowImageTime = 0.0;
 
 int vDisplayCount = 0;
 NSMutableArray *myImage;
@@ -90,6 +94,7 @@ NSMutableArray *myImage;
 
 
 @synthesize viewController = _viewController;
+
 
 - (void)applicationDidFinishLaunching:(UIApplication *)application {    
     isStop = 0;
@@ -186,8 +191,10 @@ NSMutableArray *myImage;
     myGLView = [[MyGLView alloc] initWithFrame:vBound splitnumber:vRtspNum frameWidth:VideoWidth frameHeight:VideoHeight];
 
     // Set this so that the texture will scale to the windows
-    myGLView.contentMode = UIViewContentModeScaleAspectFit;
+    //myGLView.contentMode = UIViewContentModeScaleAspectFit;
     
+//    <#CGAffineTransform t#>;
+//    CGAffineTransformTranslate(t, 1, 1);
     //[self.window addSubview:myGLView];
     [self.window insertSubview:myGLView atIndex:0];
 
@@ -421,10 +428,10 @@ NSMutableArray *myImage;
 #if RENDER_BY_OPENGLES==1
 
 -(void)displayNextFrame_Optimized:(NSTimer *)timer {
-	NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
-    NSTimeInterval vTmpTime= [NSDate timeIntervalSinceReferenceDate];
     
+    struct timeval before, after;
 
+    
     [myGLView clearFrameBuffer];
 
     
@@ -435,41 +442,43 @@ NSMutableArray *myImage;
 		return;
 	}
     
-    vTmpTime = [NSDate timeIntervalSinceReferenceDate];
+
+    gettimeofday(&before, NULL);
 	if (![video1 stepFrame]) {
 		[timer invalidate];
 		[playButton setEnabled:YES];
 		return;
 	}
-    vDecodeTime += [NSDate timeIntervalSinceReferenceDate]-vTmpTime;
+    gettimeofday(&after, NULL);
+    vDecodeTime += after.tv_sec * 1000000 + after.tv_usec - (before.tv_sec * 1000000 + before.tv_usec);
     vDecodeNum++;
     
-    
-    vTmpTime = [NSDate timeIntervalSinceReferenceDate];
-    
+    gettimeofday(&before, NULL);
     [myGLView setAVFrame:self.video1->pFrame at:eLOC_TOP_LEFT];
-    
-    vCopyFrameTime += [NSDate timeIntervalSinceReferenceDate]-vTmpTime;
+    gettimeofday(&after, NULL);
+    vCopyFrameTime += after.tv_sec * 1000000 + after.tv_usec - (before.tv_sec * 1000000 + before.tv_usec);
 
     
-    vShowImageTime += [NSDate timeIntervalSinceReferenceDate]-vTmpTime;
+    //vShowImageTime = [NSDate timeIntervalSinceReferenceDate]-vTmpTime;
+    vShowImageTime = vCopyFrameTime;
     vShowImageNum++;
     
     if(vRtspNum>=2)
     {
         [video2 stepFrame];
+
         [myGLView setAVFrame:self.video2->pFrame at:eLOC_TOP_RIGHT];
 
         
         if(vRtspNum==4)
         {
             [video3 stepFrame];
+
             [myGLView setAVFrame:self.video3->pFrame at:eLOC_BOTTOM_LEFT];
 
             
             [video4 stepFrame];
             [myGLView setAVFrame:self.video4->pFrame at:eLOC_BOTTOM_RIGHT];
-
         }
     }
     
@@ -479,24 +488,24 @@ NSMutableArray *myImage;
     pVideoFrame4 = nil;
 
     
-	float frameTime = 1.0/([NSDate timeIntervalSinceReferenceDate]-startTime);
-	if (lastFrameTime<0) {
-		lastFrameTime = frameTime;
-	} else {
-		lastFrameTime = LERP(frameTime, lastFrameTime, 0.8);
-	}
-	[label setText:[NSString stringWithFormat:@"%.0f",lastFrameTime]];
+//	float frameTime = 1.0/([NSDate timeIntervalSinceReferenceDate]-startTime);
+//	if (lastFrameTime<0) {
+//		lastFrameTime = frameTime;
+//	} else {
+//		lastFrameTime = LERP(frameTime, lastFrameTime, 0.8);
+//	}
+//	[label setText:[NSString stringWithFormat:@"%.0f",lastFrameTime]];
     
     vDisplayCount++;
     if(vDisplayCount==self.FPS) // display once per second
     {
         // update the estimate time
-        [self.DecodeLabel setText:[NSString stringWithFormat:@"%f", (vDecodeTime/self.FPS)]];
-        [self.ShowImageLabel setText:[NSString stringWithFormat:@"%f", (vShowImageTime/self.FPS)]];
-        //NSLog(@"self.FPS = %d ",self.FPS);
-        NSLog(@"<--Current Time");
+        [self.DecodeLabel setText:[NSString stringWithFormat:@"%f", (vDecodeTime/self.FPS/1000000)]];
+        [self.ShowImageLabel setText:[NSString stringWithFormat:@"%f", (vShowImageTime/self.FPS/1000000)]];
+        NSLog(@"self.FPS = %d ",self.FPS);
+        //NSLog(@"<--Current Time");
         
-        NSLog(@"RenderTime %f %f", (vCopyFrameTime/self.FPS), (vShowImageTime/self.FPS));
+        NSLog(@"Time %f %f %f", (vDecodeTime/self.FPS/1000000), (vCopyFrameTime/self.FPS/1000000), (vShowImageTime/self.FPS/1000000));
         
         
         vDecodeNum=0;
@@ -509,11 +518,7 @@ NSMutableArray *myImage;
     }
     
     
-
-        [myGLView RenderToHardware:nil];
-
-    
-    
+    [myGLView RenderToHardware:nil];
 }
 
 

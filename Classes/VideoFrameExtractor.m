@@ -125,7 +125,7 @@ enum
     // Open video file
     if(avformat_open_input(&pFormatCtx, "dummyFileName", NULL, NULL) != 0) {
         av_log(NULL, AV_LOG_ERROR, "Couldn't open memory file\n");
-        //goto initError;
+        goto initError;
     }
     
 	
@@ -266,6 +266,7 @@ initError:
 	return nil;
 }
 
+
 -(void)setupScaler {
 
 	// Release old picture and scaler
@@ -323,6 +324,8 @@ initError:
         // Is this a packet from the video stream?
         if(packet.stream_index==videoStream) {
             // Decode video frame
+//            if(packet.flags==1)
+//                NSLog(@"got 1");
             vRet = avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, &packet);
             if(vRet<=0) NSLog(@"avcodec_decode_video2 error");
         }
