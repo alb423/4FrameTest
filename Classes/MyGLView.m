@@ -16,6 +16,10 @@
 #define STRINGIZE2(x) STRINGIZE(x)
 #define SHADER_STRING(text) @ STRINGIZE2(text)
 
+#define SCALE_BY_OPENGLES 1
+#define SCALE_BY_UISCROLLVIEW 2
+#define GLVIEW_SCALE_METHOD SCALE_BY_OPENGLES
+
 NSString *const VSaaS_vertexShaderString = SHADER_STRING
 (
  attribute vec4 position;
@@ -346,6 +350,9 @@ enum {
     GLfloat ScaleFactor;
     GLfloat SwipeFactor_X;
     GLfloat SwipeFactor_Y;
+    
+    GLfloat LeftOffsetAfterScale;
+    GLfloat UpOffsetAfterScale;
 }
 
 + (Class) layerClass
@@ -530,6 +537,8 @@ enum {
     ScaleFactor = 1.0;
     SwipeFactor_X = 0.0;
     SwipeFactor_Y = 0.0;
+    
+#if GLVIEW_SCALE_METHOD == SCALE_BY_OPENGLES
     if(ScreenNumber==1)
     {
         [self setUserInteractionEnabled:YES];
@@ -537,7 +546,6 @@ enum {
         UITapGestureRecognizer *tapper = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapHandler:)];
         tapper.numberOfTapsRequired = 2;
         [self addGestureRecognizer:tapper];
-
         
         UIPinchGestureRecognizer *pincher = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(pinchHandler:)];
         [self addGestureRecognizer:pincher];
@@ -568,10 +576,10 @@ enum {
         
         UIRotationGestureRecognizer *rotater = [[UIRotationGestureRecognizer alloc] initWithTarget:self action:@selector(rotateHandler:)];
         [self addGestureRecognizer:rotater];
-
 #endif
-
     }
+#endif
+    
     return self;
 }
 
@@ -1194,7 +1202,6 @@ exit:
         }
     }
 
-
 //    vTmpTime = [NSDate timeIntervalSinceReferenceDate]-vTmpTime;
 //    NSLog(@"vTmpTime = %f",vTmpTime);
  
@@ -1216,11 +1223,11 @@ exit:
         // update the matrix, this can be used to scale
         if(ScreenNumber==1)
         {
+#if GLVIEW_SCALE_METHOD == SCALE_BY_OPENGLES
             float vTmp = 1.0f;
-
             vTmp = ScaleFactor;
             mat4f_LoadOrtho(-1.0f/vTmp, 1.0f/vTmp, -1.0f/vTmp, 1.0f/vTmp, -1.0f, 1.0f, modelviewProj);
-            //mat4f_LoadOrtho(-1.0f*vTmp, 1.0f*vTmp, -1.0f*vTmp, 1.0f*vTmp, -1.0f, 1.0f, modelviewProj);
+#endif
 
         }
         else
@@ -1234,53 +1241,35 @@ exit:
         glVertexAttribPointer(ATTRIBUTE_VERTEX, 2, GL_FLOAT, 0, 0, _vertices);
         glEnableVertexAttribArray(ATTRIBUTE_VERTEX);
         
-        
-        // TODO: avoid the texture is over bound
-        // transmit
-        int vTest = 1; // SwipeFactor_X
-        
+#if GLVIEW_SCALE_METHOD == SCALE_BY_OPENGLES
         // TODO: check the boundary,
         // If we meet the texture boundary, we should not move.
-        //if( fabsf(SwipeFactor_X) < 20)
-        //NSLog(@"Check %f %f, %f", fabsf(SwipeFactor_X*0.01), fabsf(SwipeFactor_Y*0.01), 1/fabsf(ScaleFactor));
-        
-        // SwipeFactor_X*0.01 is the right bound
-        // SwipeFactor_X*0.01*-1 is the left bound
-        //if(ScaleFactor>1)
+        if(ScaleFactor>1)
         {
-//            // This operation should be modified by a matrix operation
-//            texCoords[0] =  0 - SwipeFactor_X*0.01; // Shift to Left
-//            texCoords[1] =  vTest + SwipeFactor_Y*0.01;   // Shift to Up
-//            texCoords[2] =  vTest - SwipeFactor_X*0.01;   // Shift to Right
-//            texCoords[3] =  vTest + SwipeFactor_Y*0.01;   // Shift to Down
-//            texCoords[4] =  0 - SwipeFactor_X*0.01; // Shift to Left
-//            texCoords[5] =  0 + SwipeFactor_Y*0.01;   // Shift to Up
-//            texCoords[6] =  vTest - SwipeFactor_X*0.01;   // Shift to Right
-//            texCoords[7] =  0 + SwipeFactor_Y*0.01;   // Shift to Down
-            
-            if( fabsf(SwipeFactor_X*0.01)*2 < 1/fabsf(ScaleFactor))
+            GLfloat vTest = 1;
+            GLfloat vOffset = 0.005;
+            if( fabsf(SwipeFactor_X*vOffset) < LeftOffsetAfterScale)
             {
                 // This operation should be modified by a matrix operation
-                texCoords[0] =  0 - SwipeFactor_X*0.01; // Shift to Left
-                texCoords[2] =  vTest - SwipeFactor_X*0.01;   // Shift to Right
-                texCoords[4] =  0 - SwipeFactor_X*0.01; // Shift to Left
-                texCoords[6] =  vTest - SwipeFactor_X*0.01;   // Shift to Right
+                texCoords[0] =  0 - SwipeFactor_X*vOffset; // Shift to Left
+                texCoords[2] =  vTest - SwipeFactor_X*vOffset;   // Shift to Right
+                texCoords[4] =  0 - SwipeFactor_X*vOffset; // Shift to Left
+                texCoords[6] =  vTest - SwipeFactor_X*vOffset;   // Shift to Right
             }
             
-            if( fabsf(SwipeFactor_Y*0.01)*2 < 1/fabsf(ScaleFactor))
+            if( fabsf(SwipeFactor_Y*vOffset) < UpOffsetAfterScale)
             {
                 // This operation should be modified by a matrix operation
-                texCoords[1] =  vTest + SwipeFactor_Y*0.01;   // Shift to Up
-                texCoords[3] =  vTest + SwipeFactor_Y*0.01;   // Shift to Down
-                texCoords[5] =  0 + SwipeFactor_Y*0.01;   // Shift to Up
-                texCoords[7] =  0 + SwipeFactor_Y*0.01;   // Shift to Down
+                texCoords[1] =  vTest + SwipeFactor_Y*vOffset;   // Shift to Up
+                texCoords[3] =  vTest + SwipeFactor_Y*vOffset;   // Shift to Down
+                texCoords[5] =  0 + SwipeFactor_Y*vOffset;   // Shift to Up
+                texCoords[7] =  0 + SwipeFactor_Y*vOffset;   // Shift to Down
             }
         }
+#endif
         glVertexAttribPointer(ATTRIBUTE_TEXCOORD, 2, GL_FLOAT, 0, 0, texCoords);
         glEnableVertexAttribArray(ATTRIBUTE_TEXCOORD);
         
-        
-        // 20131108
         if(eLOC_TOP_LEFT == vLocation)
             glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         else if(eLOC_TOP_RIGHT == vLocation)
@@ -1289,7 +1278,6 @@ exit:
             glDrawArrays(GL_TRIANGLE_STRIP, 8, 4);
         else
             glDrawArrays(GL_TRIANGLE_STRIP, 12, 4);
-        
     }
     
     // NSLog(@"setFrame at:%d",vLocation);
@@ -1300,7 +1288,6 @@ exit:
 -(void)RenderToHardware:(NSTimer *)timer {
     //NSLog(@"RenderToHardware!!");
     
-
     glBindRenderbuffer(GL_RENDERBUFFER, _renderbuffer);
     [_context presentRenderbuffer:GL_RENDERBUFFER];
     
@@ -1372,40 +1359,101 @@ static NSData * copyFrameData(UInt8 *src, int linesize, int width, int height)
 
 #pragma mark - Gesture Handler
 
-- (void) rotateHandler:(id)sender
-{
-    NSLog(@"ROTATE!");
-}
-
 - (void) tapHandler:(id)sender
 {
     ScaleFactor = 1.0f;
     SwipeFactor_X = 0.0f;
     SwipeFactor_Y = 0.0f;
+    LeftOffsetAfterScale = 0.0f;
+    UpOffsetAfterScale = 0.0f;
     NSLog(@"Double TAP!");
-}
-
-- (void) longPressHandler:(UILongPressGestureRecognizer *)sender
-{
-    ScaleFactor = 1.0f;
-    SwipeFactor_X = 0.0f;
-    SwipeFactor_Y = 0.0f;
-    NSLog(@"LONG PRESS!");
 }
 
 - (void) pinchHandler:(UIPinchGestureRecognizer *)sender
 {
-//    static float old = 0.0f;
-//
-//    if(sender.scale == 1)
-//        old = ScaleFactor-1.0f;
-//
-//    ScaleFactor = old + sender.scale;
-//    
+    // if sender.scale > 1.0, zoom in
+    // if sender.scale < 1.0, zoom out
     // zoom in/out
-    if((sender.scale>0.2) && (sender.scale<5))
+    if((sender.scale>1) && (sender.scale<5))
+    {
         ScaleFactor = sender.scale;
-    NSLog(@"PICH %0.2f! %0.2f", sender.scale, ScaleFactor);
+        
+        // The offset after zoom in should < 1.0
+        if(ScaleFactor > 1.0)
+        {
+            LeftOffsetAfterScale = (1.0 - 1.0/ScaleFactor)/2;
+            UpOffsetAfterScale = LeftOffsetAfterScale;
+        }
+        else
+        {
+            // TODO:
+            LeftOffsetAfterScale = 0.0;
+            UpOffsetAfterScale = 0.0;
+        }
+    }
+    NSLog(@"PICH %0.2f! %0.2f, LeftOffsetAfterScale=%0.2f", sender.scale, ScaleFactor,LeftOffsetAfterScale);
+}
+
+
+-(void) panHandler:(UIPanGestureRecognizer *)sender
+{
+    static CGFloat startX, startY;
+    
+    if([(UIPanGestureRecognizer*)sender state] == UIGestureRecognizerStateChanged) {
+        
+        CGPoint tp = [(UIPanGestureRecognizer*)sender locationInView:self.superview];
+        CGFloat deltaX = tp.x - startX;
+        CGFloat deltaY = - tp.y + startY;
+        startX = tp.x; startY = tp.y;
+        
+        
+        if( fabsf(deltaX) > fabsf(deltaY) )
+        {
+            if(deltaX>0)
+            {
+                //  + delx/width
+                if(SwipeFactor_X < LeftOffsetAfterScale*100)
+                    SwipeFactor_X ++;//= delX;
+            }
+            else
+            {
+                if(SwipeFactor_X > -1*LeftOffsetAfterScale*100)
+                    SwipeFactor_X --;//= delX;
+            }
+        }
+        else
+        {
+            if(deltaY>0)
+            {
+                if(SwipeFactor_Y < UpOffsetAfterScale*100)
+                    SwipeFactor_Y++;
+            }
+            else
+            {
+                if(SwipeFactor_Y > -1*UpOffsetAfterScale*100)
+                    SwipeFactor_Y--;
+            }
+        }
+        
+        NSLog(@"start(x,y)=%f,%f, del(x,y)=%f,%f",startX,startY,deltaX,deltaY);
+    }
+    
+    if([(UIPanGestureRecognizer*)sender state] == UIGestureRecognizerStateBegan) {
+        CGPoint tp = [(UIPanGestureRecognizer*)sender locationInView:self.superview];//[director openGLView]];
+        startX = tp.x;
+        startY = tp.y;
+        NSLog(@"start(x,y)=%f,%f",startX,startY);
+    }
+}
+
+- (void) rotateHandler:(id)sender
+{
+    NSLog(@"ROTATE!");
+}
+
+- (void) longPressHandler:(UILongPressGestureRecognizer *)sender
+{
+    NSLog(@"LONG PRESS!");
 }
 
 - (void) swipeHandler:(UISwipeGestureRecognizer *)sender
@@ -1428,43 +1476,6 @@ static NSData * copyFrameData(UInt8 *src, int linesize, int width, int height)
     }
 }
 
--(void) panHandler:(UIPanGestureRecognizer *)sender
-{
-    static CGFloat startX, startY;
-    
-    if([(UIPanGestureRecognizer*)sender state] == UIGestureRecognizerStateChanged) {
-        
-        CGPoint tp = [(UIPanGestureRecognizer*)sender locationInView:self.superview];
-        CGFloat delX = tp.x - startX;
-        CGFloat delY = - tp.y + startY;
-        startX = tp.x; startY = tp.y;
-        
-        if( fabsf(delX) > fabsf(delY) )
-        {
-            if(delX>0)
-                SwipeFactor_X++;
-            else
-                SwipeFactor_X--;
-        }
-        else
-        {
-            if(delY>0)
-                SwipeFactor_Y++;
-            else
-                SwipeFactor_Y--;
-        }
-        
-        //NSLog(@"start(x,y)=%f,%f, del(x,y)=%f,%f",startX,startY,delX,delY);
-        //[layer tellWorldToSpinIt:delX:delY]; //CALL THE FUNCTION
-    }
-    
-    if([(UIPanGestureRecognizer*)sender state] == UIGestureRecognizerStateBegan) {
-        CGPoint tp = [(UIPanGestureRecognizer*)sender locationInView:self.superview];//[director openGLView]];
-        startX = tp.x;
-        startY = tp.y;
-        NSLog(@"start(x,y)=%f,%f",startX,startY);
-    }
-}
 
 @end
 

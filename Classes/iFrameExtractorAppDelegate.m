@@ -30,7 +30,7 @@
 
 
 // Configuration
-#define PLAY_MEHTOD PLAY_REMOTE_FILE // PLAY_MEMORY_FILE, PLAY_REMOTE_FILE
+#define PLAY_MEHTOD PLAY_MEMORY_FILE // PLAY_MEMORY_FILE, PLAY_REMOTE_FILE
 #define RENDER_BY_OPENGLES 1
 #define ENABLE_DISPATCH_QUEUE_FOR_GLVIEW 0 // enable will cause crash
 
@@ -38,9 +38,9 @@
 
 #if PLAY_MEHTOD == PLAY_MEMORY_FILE
 
-#define VIDEO_SRC1 @"IMG_0292.mp4"
+//#define VIDEO_SRC1 @"IMG_0292.mp4"
 //#define VIDEO_SRC1 @"IMG_0292_moovHead.mp4"
-//#define VIDEO_SRC1 @"7h800.mp4"
+#define VIDEO_SRC1 @"7h800.mp4"
 #define VIDEO_SRC2 @"7h800-2.mp4"
 #define VIDEO_SRC3 @"7h800-3.mp4"
 #define VIDEO_SRC4 @"7h800-4.mp4"
@@ -502,10 +502,10 @@ NSMutableArray *myImage;
         // update the estimate time
         [self.DecodeLabel setText:[NSString stringWithFormat:@"%f", (vDecodeTime/self.FPS/1000000)]];
         [self.ShowImageLabel setText:[NSString stringWithFormat:@"%f", (vShowImageTime/self.FPS/1000000)]];
-        NSLog(@"self.FPS = %d ",self.FPS);
+        //NSLog(@"self.FPS = %d ",self.FPS);
         //NSLog(@"<--Current Time");
         
-        NSLog(@"Time %f %f %f", (vDecodeTime/self.FPS/1000000), (vCopyFrameTime/self.FPS/1000000), (vShowImageTime/self.FPS/1000000));
+        //NSLog(@"Time %f %f %f", (vDecodeTime/self.FPS/1000000), (vCopyFrameTime/self.FPS/1000000), (vShowImageTime/self.FPS/1000000));
         
         
         vDecodeNum=0;
@@ -646,9 +646,8 @@ NSMutableArray *myImage;
         // update the estimate time
         [self.DecodeLabel setText:[NSString stringWithFormat:@"%f", (vDecodeTime/self.FPS)]];
         [self.ShowImageLabel setText:[NSString stringWithFormat:@"%f", (vShowImageTime/self.FPS)]];
-        //NSLog(@"self.FPS = %d ",self.FPS);
+
         NSLog(@"<--Current Time");
-        
         NSLog(@"RenderTime %f %f", (vCopyFrameTime/self.FPS), (vShowImageTime/self.FPS));
         
         
