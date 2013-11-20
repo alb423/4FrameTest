@@ -39,8 +39,8 @@
 #if PLAY_MEHTOD == PLAY_MEMORY_FILE
 
 //#define VIDEO_SRC1 @"IMG_0292.mp4"
-//#define VIDEO_SRC1 @"IMG_0292_moovHead.mp4"
-#define VIDEO_SRC1 @"7h800.mp4"
+#define VIDEO_SRC1 @"IMG_0292_moovHead.mp4"
+//#define VIDEO_SRC1 @"7h800.mp4"
 #define VIDEO_SRC2 @"7h800-2.mp4"
 #define VIDEO_SRC3 @"7h800-3.mp4"
 #define VIDEO_SRC4 @"7h800-4.mp4"
