@@ -455,8 +455,8 @@ NSMutableArray *myImage;
     
     gettimeofday(&before, NULL);
     [myGLView setAVFrame:self.video1->pFrame at:eLOC_TOP_LEFT];
-    gettimeofday(&after, NULL);
-    vCopyFrameTime += after.tv_sec * 1000000 + after.tv_usec - (before.tv_sec * 1000000 + before.tv_usec);
+//    gettimeofday(&after, NULL);
+//    vCopyFrameTime += after.tv_sec * 1000000 + after.tv_usec - (before.tv_sec * 1000000 + before.tv_usec);
 
     
     //vShowImageTime = [NSDate timeIntervalSinceReferenceDate]-vTmpTime;
@@ -469,6 +469,8 @@ NSMutableArray *myImage;
 
         [myGLView setAVFrame:self.video2->pFrame at:eLOC_TOP_RIGHT];
 
+        gettimeofday(&after, NULL);
+        vCopyFrameTime += after.tv_sec * 1000000 + after.tv_usec - (before.tv_sec * 1000000 + before.tv_usec);
         
         if(vRtspNum==4)
         {

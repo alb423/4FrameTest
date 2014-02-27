@@ -31,6 +31,7 @@
 		9A6F669D1835AD6700E276DB /* IMG_0292_moovHead.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 9A6F669C1835AD6700E276DB /* IMG_0292_moovHead.mp4 */; };
 		9A8A36E2183B6DEC00F95C74 /* GLKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9A8A36E1183B6DEC00F95C74 /* GLKit.framework */; };
 		9ACD2AF818307FD600DEBAD9 /* IMG_0292.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 9ACD2AF718307FD600DEBAD9 /* IMG_0292.mp4 */; };
+		9AD3311118449CE600CD006C /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9AD3311018449CE600CD006C /* MediaPlayer.framework */; };
 		B20DF6A7182002920092A989 /* MyGLView.m in Sources */ = {isa = PBXBuildFile; fileRef = B20DF6A5182002920092A989 /* MyGLView.m */; };
 		B23373E716DEFA1300F5DE7F /* 7h800.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = B23373E616DEFA1300F5DE7F /* 7h800.mp4 */; };
 		B23373F516DF0E1100F5DE7F /* 1x1-iPad-l.png in Resources */ = {isa = PBXBuildFile; fileRef = B23373E916DF0E1000F5DE7F /* 1x1-iPad-l.png */; };
@@ -82,6 +83,7 @@
 		9A6F669C1835AD6700E276DB /* IMG_0292_moovHead.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = IMG_0292_moovHead.mp4; sourceTree = "<group>"; };
 		9A8A36E1183B6DEC00F95C74 /* GLKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLKit.framework; path = System/Library/Frameworks/GLKit.framework; sourceTree = SDKROOT; };
 		9ACD2AF718307FD600DEBAD9 /* IMG_0292.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = IMG_0292.mp4; sourceTree = "<group>"; };
+		9AD3311018449CE600CD006C /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = System/Library/Frameworks/MediaPlayer.framework; sourceTree = SDKROOT; };
 		B20DF6A5182002920092A989 /* MyGLView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MyGLView.m; sourceTree = "<group>"; };
 		B20DF6A6182002920092A989 /* MyGLView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyGLView.h; sourceTree = "<group>"; };
 		B23373E616DEFA1300F5DE7F /* 7h800.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = 7h800.mp4; sourceTree = "<group>"; };
@@ -108,6 +110,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9AD3311118449CE600CD006C /* MediaPlayer.framework in Frameworks */,
 				9A8A36E2183B6DEC00F95C74 /* GLKit.framework in Frameworks */,
 				9A53E8DC181E5721006A611B /* QuartzCore.framework in Frameworks */,
 				9A53E8DA181E5707006A611B /* OpenGLES.framework in Frameworks */,
@@ -209,6 +212,7 @@
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				9AD3311018449CE600CD006C /* MediaPlayer.framework */,
 				9A8A36E1183B6DEC00F95C74 /* GLKit.framework */,
 				9A53E8DB181E5721006A611B /* QuartzCore.framework */,
 				9A53E8D9181E5707006A611B /* OpenGLES.framework */,
