@@ -39,7 +39,9 @@
 #if PLAY_MEHTOD == PLAY_MEMORY_FILE
 
 //#define VIDEO_SRC1 @"IMG_0292.mp4"
-#define VIDEO_SRC1 @"IMG_0292_moovHead.mp4"
+//#define VIDEO_SRC1 @"IMG_0292_moovHead.mp4"
+#define VIDEO_SRC1 @"320x180_64kbps_7fps.mp4"
+//#define VIDEO_SRC1 @"160x90_64kbps_7fps.mp4"
 //#define VIDEO_SRC1 @"7h800.mp4"
 #define VIDEO_SRC2 @"7h800-2.mp4"
 #define VIDEO_SRC3 @"7h800-3.mp4"
@@ -82,8 +84,14 @@ double vShowImageTime = 0.0;
 int vDisplayCount = 0;
 NSMutableArray *myImage;
 
-@synthesize window, imageView, imageView2, imageView3, imageView4, label, DecodeLabel, ShowImageLabel, playButton, video1, video2, video3, video4, FPS;
-
+@synthesize window, imageView, imageView2, imageView3, imageView4, label, DecodeLabel, ShowImageLabel, playButton, FPS;
+#if OPENGL_RENDER_SCREE_NUM == OPENGL_RENDER_SCREE_NUM_4
+//@synthesize video1, video2, video3, video4;
+#elif OPENGL_RENDER_SCREE_NUM == OPENGL_RENDER_SCREE_NUM_8
+@synthesize video1, video2, video3, video4, video5, video6, video7, video8;
+#elif OPENGL_RENDER_SCREE_NUM == OPENGL_RENDER_SCREE_NUM_16
+@synthesize video1, video2, video3, video4, video5, video6, video7, video8, video9, video10, video11, video12, video13, video14, video15, video16 ;
+#endif
 
 -(void)applicationDidEnterBackground:(UIApplication *)application
 {
@@ -124,13 +132,15 @@ NSMutableArray *myImage;
 	[playButton setEnabled:NO];
     isStop = 0;
 
+#if OPENGL_RENDER_SCREE_NUM == OPENGL_RENDER_SCREE_NUM_4
+    
     UIButton *vBn = (UIButton *)sender;
     
     if([vBn.currentTitle isEqualToString:@"1"])
     {
         vRtspNum=1;
 #if PLAY_MEHTOD == PLAY_MEMORY_FILE
-        self.video1 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        self->video1 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
 #else
         self.video1 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC1];
 #endif
@@ -140,8 +150,8 @@ NSMutableArray *myImage;
     {
         vRtspNum=2;
 #if PLAY_MEHTOD == PLAY_MEMORY_FILE
-        self.video1 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
-        self.video2 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC2]];
+        self->video1 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        self->video2 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC2]];
 #else
         self.video1 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC1];
         self.video2 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC2];
@@ -149,14 +159,14 @@ NSMutableArray *myImage;
         [video1 seekTime:0.0];
         [video2 seekTime:0.0];
     }
-    else
+    else if([vBn.currentTitle isEqualToString:@"4"])
     {
         vRtspNum=4;
 #if PLAY_MEHTOD == PLAY_MEMORY_FILE
-        self.video1 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
-        self.video2 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC2]];
-        self.video3 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC3]];
-        self.video4 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC4]];
+        self->video1 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        self->video2 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC2]];
+        self->video3 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC3]];
+        self->video4 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC4]];
 #else
         self.video1 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC1];
         self.video2 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC2];
@@ -169,12 +179,58 @@ NSMutableArray *myImage;
         [video4 seekTime:0.0];
     }
     
+#else
+    
+    
+    {
+        vRtspNum=OPENGL_RENDER_SCREE_NUM;
+#if PLAY_MEHTOD == PLAY_MEMORY_FILE
+        video1 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        video2 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        video3 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        video4 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        video5 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        video6 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        video7 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        video8 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        video9 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        video10 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        video11 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        video12 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        video13 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        video14 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        video15 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        video16 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        
+        [video1 seekTime:0.0];
+        [video2 seekTime:0.0];
+        [video3 seekTime:0.0];
+        [video4 seekTime:0.0];
+        [video5 seekTime:0.0];
+        [video6 seekTime:0.0];
+        [video7 seekTime:0.0];
+        [video8 seekTime:0.0];
+        [video9 seekTime:0.0];
+        [video10 seekTime:0.0];
+        [video11 seekTime:0.0];
+        [video12 seekTime:0.0];
+        [video13 seekTime:0.0];
+        [video14 seekTime:0.0];
+        [video15 seekTime:0.0];
+        [video16 seekTime:0.0];
+#else
+        // do nothing
+#endif        
+    }
+#endif
+    
+    
     // The bound should be assigned to the same size of screen
     //CGRect vBound = self.window.bounds;
     
     // The size should be set according the video size, 1280 * 720 for 720p
-    VideoWidth = self.video1.sourceWidth;
-    VideoHeight = self.video1.sourceHeight;
+    VideoWidth = video1.sourceWidth;
+    VideoHeight = video1.sourceHeight;
 
 #if 0
     CGRect vBound;
@@ -188,6 +244,7 @@ NSMutableArray *myImage;
     NSLog(@"x,y,w,h = (%.0f,%.0f,%.0f,%.0f)",vBound.origin.x,vBound.origin.y,vBound.size.width,vBound.size.height);
     
     
+#if OPENGL_RENDER_SCREE_NUM == OPENGL_RENDER_SCREE_NUM_4
     myGLView = [[MyGLView alloc] initWithFrame:vBound splitnumber:vRtspNum frameWidth:VideoWidth frameHeight:VideoHeight];
 
     // Set this so that the texture will scale to the windows
@@ -197,16 +254,22 @@ NSMutableArray *myImage;
 //    CGAffineTransformTranslate(t, 1, 1);
     //[self.window addSubview:myGLView];
     [self.window insertSubview:myGLView atIndex:0];
-
-    self.FPS = self.video1.fps;
+#else
+    // do nothing
+#endif
+    
+    self.FPS = video1.fps;
     if(self.FPS==0) self.FPS=30;
+    
+#if OPENGL_RENDER_SCREE_NUM == OPENGL_RENDER_SCREE_NUM_4
+    // do nothing
+#else
+    self.FPS=7;
+#endif
+    
     NSLog(@"RTSPNUM=%d self.FPS=%d", vRtspNum, self.FPS);
     {
-//        [NSTimer scheduledTimerWithTimeInterval:1.0/self.FPS
-//                                         target:self
-//                                       selector:@selector(displayNextFrame_OpenGLEs:)
-//                                       userInfo:nil
-//                                        repeats:YES];
+
         
         [NSTimer scheduledTimerWithTimeInterval:1.0/self.FPS
                                          target:self
@@ -242,8 +305,10 @@ NSMutableArray *myImage;
         vRtspNum=1;
     else if([vBn.currentTitle isEqualToString:@"2"])
         vRtspNum=2;
-    else
+    else if([vBn.currentTitle isEqualToString:@"4"])
         vRtspNum=4;
+    else
+        vRtspNum=OPENGL_RENDER_SCREE_NUM; // 8 or 16
  
 	
 	// video images are landscape, so rotate image view 90 degrees
@@ -252,17 +317,18 @@ NSMutableArray *myImage;
 	[imageView3 setTransform:CGAffineTransformMakeRotation(M_PI/2)];
     [imageView4 setTransform:CGAffineTransformMakeRotation(M_PI/2)];
     
-#if PLAY_MEHTOD == PLAY_MEMORY_FILE
-    self.video1 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
-#else
-    self.video1 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC1];
-#endif
-    
     // set output image size
     if(vRtspNum==1)
     {
         ScreenHeight=426;
         ScreenWidth=320;
+        
+#if PLAY_MEHTOD == PLAY_MEMORY_FILE
+        self.video1 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+#else
+        self.video1 = [[VideoFrameExtractor alloc] initWithVideo:VIDEO_SRC1];
+#endif
+        
         video1.outputWidth = ScreenHeight;
         video1.outputHeight = ScreenWidth;
     }
@@ -308,7 +374,26 @@ NSMutableArray *myImage;
         video4.outputWidth = ScreenHeight/2;//426;
         video4.outputHeight = ScreenWidth/2;
     }
+    else
+    {
+        self.video1 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        self.video2 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        self.video3 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        self.video4 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        self.video5 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        self.video6 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        self.video7 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        self.video8 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        self.video9 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        self.video10 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        self.video11 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        self.video12 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        self.video13 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        self.video14 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        self.video15 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
+        self.video16 = [[VideoFrameExtractor alloc] initWithVideoMemory:[Utilities bundlePath:VIDEO_SRC1]];
 
+    }
     
 	// print some info about the video
 	NSLog(@"video duration: %f",video1.duration);
@@ -359,6 +444,24 @@ NSMutableArray *myImage;
 	   [video2 seekTime:0.0];
 	   [video3 seekTime:0.0];
 	   [video4 seekTime:0.0];
+    }
+    else
+    {
+        [video2 seekTime:0.0];
+        [video3 seekTime:0.0];
+        [video4 seekTime:0.0];
+        [video5 seekTime:0.0];
+        [video6 seekTime:0.0];
+        [video7 seekTime:0.0];
+        [video8 seekTime:0.0];
+        [video9 seekTime:0.0];
+        [video10 seekTime:0.0];
+        [video11 seekTime:0.0];
+        [video12 seekTime:0.0];
+        [video13 seekTime:0.0];
+        [video14 seekTime:0.0];
+        [video15 seekTime:0.0];
+        [video16 seekTime:0.0];
     }
     
     // TODO: mark me
@@ -431,10 +534,11 @@ NSMutableArray *myImage;
     
     struct timeval before, after;
 
-    
+#if OPENGL_RENDER_SCREE_NUM == OPENGL_RENDER_SCREE_NUM_4
     [myGLView clearFrameBuffer];
-
+#endif
     
+    //NSLog(@"displayNextFrame_Optimized");
     if(isStop)
     {
 		[timer invalidate];
@@ -445,16 +549,19 @@ NSMutableArray *myImage;
 
     gettimeofday(&before, NULL);
 	if (![video1 stepFrame]) {
+        NSLog(@"video1 stepFrame fail");
 		[timer invalidate];
 		[playButton setEnabled:YES];
 		return;
 	}
+#if OPENGL_RENDER_SCREE_NUM == OPENGL_RENDER_SCREE_NUM_4
     gettimeofday(&after, NULL);
     vDecodeTime += after.tv_sec * 1000000 + after.tv_usec - (before.tv_sec * 1000000 + before.tv_usec);
     vDecodeNum++;
     
     gettimeofday(&before, NULL);
-    [myGLView setAVFrame:self.video1->pFrame at:eLOC_TOP_LEFT];
+    [myGLView setAVFrame:self->video1->pFrame at:eLOC_TOP_LEFT];
+#endif
 //    gettimeofday(&after, NULL);
 //    vCopyFrameTime += after.tv_sec * 1000000 + after.tv_usec - (before.tv_sec * 1000000 + before.tv_usec);
 
@@ -463,11 +570,13 @@ NSMutableArray *myImage;
     vShowImageTime = vCopyFrameTime;
     vShowImageNum++;
     
+#if OPENGL_RENDER_SCREE_NUM == OPENGL_RENDER_SCREE_NUM_4
+    //NSLog(@"OPENGL_RENDER_SCREE_NUM_4");
     if(vRtspNum>=2)
     {
         [video2 stepFrame];
 
-        [myGLView setAVFrame:self.video2->pFrame at:eLOC_TOP_RIGHT];
+        [myGLView setAVFrame:self->video2->pFrame at:eLOC_TOP_RIGHT];
 
         gettimeofday(&after, NULL);
         vCopyFrameTime += after.tv_sec * 1000000 + after.tv_usec - (before.tv_sec * 1000000 + before.tv_usec);
@@ -476,18 +585,54 @@ NSMutableArray *myImage;
         {
             [video3 stepFrame];
 
-            [myGLView setAVFrame:self.video3->pFrame at:eLOC_BOTTOM_LEFT];
+            [myGLView setAVFrame:self->video3->pFrame at:eLOC_BOTTOM_LEFT];
 
             
             [video4 stepFrame];
-            [myGLView setAVFrame:self.video4->pFrame at:eLOC_BOTTOM_RIGHT];
+            [myGLView setAVFrame:self->video4->pFrame at:eLOC_BOTTOM_RIGHT];
         }
     }
-    
     pVideoFrame1 = nil;
     pVideoFrame2 = nil;
     pVideoFrame3 = nil;
     pVideoFrame4 = nil;
+#elif OPENGL_RENDER_SCREE_NUM == OPENGL_RENDER_SCREE_NUM_8
+
+    [video2 stepFrame];
+    [video3 stepFrame];
+    [video4 stepFrame];
+    [video5 stepFrame];
+    [video6 stepFrame];
+    [video7 stepFrame];
+    [video8 stepFrame];
+    
+    gettimeofday(&after, NULL);
+    vDecodeTime += after.tv_sec * 1000000 + after.tv_usec - (before.tv_sec * 1000000 + before.tv_usec);
+    vDecodeNum++;
+#elif OPENGL_RENDER_SCREE_NUM == OPENGL_RENDER_SCREE_NUM_16
+
+    [video2 stepFrame];
+    [video3 stepFrame];
+    [video4 stepFrame];
+    [video5 stepFrame];
+    [video6 stepFrame];
+    [video7 stepFrame];
+    [video8 stepFrame];
+    [video9 stepFrame];
+    [video10 stepFrame];
+    [video11 stepFrame];
+    [video12 stepFrame];
+    [video13 stepFrame];
+    [video14 stepFrame];
+    [video15 stepFrame];
+    [video16 stepFrame];
+    
+    gettimeofday(&after, NULL);
+    vDecodeTime += after.tv_sec * 1000000 + after.tv_usec - (before.tv_sec * 1000000 + before.tv_usec);
+    vDecodeNum++;
+#endif
+    
+
 
     
 //	float frameTime = 1.0/([NSDate timeIntervalSinceReferenceDate]-startTime);
@@ -507,8 +652,7 @@ NSMutableArray *myImage;
         //NSLog(@"self.FPS = %d ",self.FPS);
         //NSLog(@"<--Current Time");
         
-        //NSLog(@"Time %f %f %f", (vDecodeTime/self.FPS/1000000), (vCopyFrameTime/self.FPS/1000000), (vShowImageTime/self.FPS/1000000));
-        
+        NSLog(@"Time %f %f %f", (vDecodeTime/self.FPS/1000000), (vCopyFrameTime/self.FPS/1000000), (vShowImageTime/self.FPS/1000000));
         
         vDecodeNum=0;
         vShowImageNum=0;
@@ -519,8 +663,9 @@ NSMutableArray *myImage;
         vCopyFrameTime=0.0;
     }
     
-    
+#if OPENGL_RENDER_SCREE_NUM == OPENGL_RENDER_SCREE_NUM_4
     [myGLView RenderToHardware:nil];
+#endif
 }
 
 
@@ -528,8 +673,6 @@ NSMutableArray *myImage;
 	NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
     NSTimeInterval vTmpTime= [NSDate timeIntervalSinceReferenceDate];
 
-    
-    //MyVideoFrame * pVideoFrame1, *pVideoFrame2, *pVideoFrame3, *pVideoFrame4;
     // albert.liao ***
 #if ENABLE_DISPATCH_QUEUE_FOR_GLVIEW == 1
     dispatch_async(_dispatchQueue, ^{
@@ -560,9 +703,9 @@ NSMutableArray *myImage;
     
     // This function cost about 11ms in iPad2...
     // This is the bottle neck of GLView
-    pVideoFrame1 =[MyGLView CopyFullAVFrameToVideoFrame:self.video1->pFrame \
-                                          withWidth: self.video1->pFrame->width \
-                                         withHeight: self.video1->pFrame->height];
+    pVideoFrame1 =[MyGLView CopyFullAVFrameToVideoFrame:video1->pFrame \
+                                          withWidth: video1->pFrame->width \
+                                         withHeight: video1->pFrame->height];
     
     vCopyFrameTime += [NSDate timeIntervalSinceReferenceDate]-vTmpTime;
     
@@ -584,9 +727,9 @@ NSMutableArray *myImage;
     if(vRtspNum>=2)
     {
         [video2 stepFrame];
-        pVideoFrame2 =[MyGLView CopyFullAVFrameToVideoFrame:self.video2->pFrame \
-                                                                   withWidth: self.video2->pFrame->width \
-                                                                  withHeight: self.video2->pFrame->height];
+        pVideoFrame2 =[MyGLView CopyFullAVFrameToVideoFrame:video2->pFrame \
+                                                                   withWidth: video2->pFrame->width \
+                                                                  withHeight: video2->pFrame->height];
 
 #if ENABLE_DISPATCH_QUEUE_FOR_GLVIEW == 1
         dispatch_async(_dispatchQueue, ^{
@@ -599,9 +742,9 @@ NSMutableArray *myImage;
         if(vRtspNum==4)
         {
             [video3 stepFrame];
-            pVideoFrame3 =[MyGLView CopyFullAVFrameToVideoFrame:self.video1->pFrame \
-                                                                       withWidth: self.video1->pFrame->width \
-                                                                      withHeight: self.video1->pFrame->height];
+            pVideoFrame3 =[MyGLView CopyFullAVFrameToVideoFrame:video1->pFrame \
+                                                                       withWidth: video1->pFrame->width \
+                                                                      withHeight: video1->pFrame->height];
 
 #if ENABLE_DISPATCH_QUEUE_FOR_GLVIEW == 1
             dispatch_async(_dispatchQueue, ^{
@@ -612,9 +755,9 @@ NSMutableArray *myImage;
 #endif
 
             [video4 stepFrame];
-            pVideoFrame4 =[MyGLView CopyFullAVFrameToVideoFrame:self.video1->pFrame \
-                                                                       withWidth: self.video1->pFrame->width \
-                                                                      withHeight: self.video1->pFrame->height];
+            pVideoFrame4 =[MyGLView CopyFullAVFrameToVideoFrame:video1->pFrame \
+                                                                       withWidth: video1->pFrame->width \
+                                                                      withHeight: video1->pFrame->height];
 #if ENABLE_DISPATCH_QUEUE_FOR_GLVIEW == 1
             dispatch_async(_dispatchQueue, ^{
 #endif

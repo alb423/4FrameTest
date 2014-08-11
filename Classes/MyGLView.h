@@ -6,6 +6,10 @@
 #include "libswscale/swscale.h"
 #include "libavcodec/avcodec.h"
 
+#define OPENGL_RENDER_SCREE_NUM_4   4
+#define OPENGL_RENDER_SCREE_NUM_8   8
+#define OPENGL_RENDER_SCREE_NUM_16  16
+#define OPENGL_RENDER_SCREE_NUM OPENGL_RENDER_SCREE_NUM_4
 @interface MyVideoFrame :NSObject
 @property (readwrite, nonatomic, strong) NSData *luma;
 @property (readwrite, nonatomic, strong) NSData *chromaB;
@@ -14,14 +18,22 @@
 @property (readwrite, nonatomic) NSUInteger height;
 @end
 
-
+#if OPENGL_RENDER_SCREE_NUM == OPENGL_RENDER_SCREE_NUM_4
 typedef enum eRenderLoc {
     eLOC_TOP_LEFT  = 0,
     eLOC_TOP_RIGHT        = 1,
     eLOC_BOTTOM_LEFT       = 2,
     eLOC_BOTTOM_RIGHT       = 3,
 } eRenderLocType;
-
+#else
+// when screen number is 8 or 16, we skip render
+typedef enum eRenderLoc {
+    eLOC_TOP_LEFT  = 0,
+    eLOC_TOP_RIGHT        = 1,
+    eLOC_BOTTOM_LEFT       = 2,
+    eLOC_BOTTOM_RIGHT       = 3,
+} eRenderLocType;
+#endif
 
 @interface MyGLView : UIView
 
