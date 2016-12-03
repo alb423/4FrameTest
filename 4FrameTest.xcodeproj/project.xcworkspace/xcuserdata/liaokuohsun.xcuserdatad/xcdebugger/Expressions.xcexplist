@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VariablesViewState
+   version = "1.0">
+   <ContextStates>
+      <ContextState
+         contextName = "-[iFrameExtractorViewController playButtonAction:]:iFrameExtractorViewController.m">
+      </ContextState>
+      <ContextState
+         contextName = "-[VideoFrameExtractor currentImage]:VideoFrameExtractor.m">
+      </ContextState>
+      <ContextState
+         contextName = "-[iFrameExtractorViewController displayNextFrame_Optimized:]:iFrameExtractorViewController.m">
+         <PersistentStrings>
+            <PersistentString
+               value = "vDisplayCount">
+            </PersistentString>
+            <PersistentString
+               value = "self.FPS">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+   </ContextStates>
+</VariablesViewState>
