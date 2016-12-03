@@ -35,7 +35,7 @@
 	//AVPicture picture;
     AVFrame *pRGBFrame;
 	int videoStream;
-	struct SwsContext *img_convert_ctx;
+	struct SwsContext *pImgConvertCtx;
 	int sourceWidth, sourceHeight;
 	int outputWidth, outputHeight;
 	UIImage *currentImage;

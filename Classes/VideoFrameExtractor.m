@@ -12,8 +12,7 @@
 
 @interface VideoFrameExtractor (private)
 -(void)convertFrameToRGB;
--(UIImage *)imageFromAVPicture:(AVFrame *)pFrame width:(int)width height:(int)height;
--(void)savePicture:(AVFrame *)pFrame width:(int)width height:(int)height index:(int)iFrame;
+-(UIImage *)imageFromAVFrame:(AVFrame *)pFrame width:(int)width height:(int)height;
 -(void)setupScaler;
 @end
 
@@ -64,7 +63,7 @@ enum
 -(UIImage *)currentImage {
 	if (!pYUVFrame->data[0]) return nil;
 	[self convertFrameToRGB];
-	return [self imageFromAVPicture:pRGBFrame width:outputWidth height:outputHeight];
+	return [self imageFromAVFrame:pRGBFrame width:outputWidth height:outputHeight];
 }
 
 -(double)duration {
@@ -274,7 +273,7 @@ initError:
 
 	// Release old picture and scaler
 	av_free(pRGBFrame);
-	sws_freeContext(img_convert_ctx);	
+	sws_freeContext(pImgConvertCtx);
 	
 	// Allocate RGB picture
     pRGBFrame = av_frame_alloc();
@@ -289,7 +288,7 @@ initError:
     
 	// Setup scaler
 	static int sws_flags =  SWS_FAST_BILINEAR;
-	img_convert_ctx = sws_getContext(pCodecCtx->width, 
+	pImgConvertCtx = sws_getContext(pCodecCtx->width,
 									 pCodecCtx->height,
 									 pCodecCtx->pix_fmt,
 									 outputWidth, 
@@ -308,7 +307,7 @@ initError:
 
 -(void)dealloc {
 	// Free scaler
-	sws_freeContext(img_convert_ctx);	
+	sws_freeContext(pImgConvertCtx);
 
 	// Free RGB frame
     av_free(pRGBFrame);
@@ -353,7 +352,7 @@ initError:
 }
 
 -(void)convertFrameToRGB {
-	sws_scale (img_convert_ctx, (const uint8_t **)pYUVFrame->data, pYUVFrame->linesize,
+	sws_scale (pImgConvertCtx, (const uint8_t **)pYUVFrame->data, pYUVFrame->linesize,
 			   0, pCodecCtx->height,
 			   pRGBFrame->data, pRGBFrame->linesize);
 }

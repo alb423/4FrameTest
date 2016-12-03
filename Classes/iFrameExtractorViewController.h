@@ -11,19 +11,14 @@
 
 @class VideoFrameExtractor;
 
-@interface iFrameExtractorViewController : UIViewController {
+@interface iFrameExtractorViewController  : UIViewController {
     IBOutlet UIImageView *imageView;
     IBOutlet UIImageView *imageView2;
     IBOutlet UIImageView *imageView3;
     IBOutlet UIImageView *imageView4;
     IBOutlet UILabel *label;
     IBOutlet UIButton *playButton;
-    //#if OPENGL_RENDER_SCREE_NUM == OPENGL_RENDER_SCREE_NUM_4
-    //	VideoFrameExtractor *video1;
-    //    VideoFrameExtractor *video2;
-    //    VideoFrameExtractor *video3;
-    //    VideoFrameExtractor *video4;
-    //#else
+
     VideoFrameExtractor *video1;
     VideoFrameExtractor *video2;
     VideoFrameExtractor *video3;
@@ -40,7 +35,7 @@
     VideoFrameExtractor *video14;
     VideoFrameExtractor *video15;
     VideoFrameExtractor *video16;
-    //#endif
+
     float lastFrameTime;
     
     MyGLView *myGLView;
@@ -66,34 +61,13 @@
 @property (nonatomic, strong) IBOutlet UILabel *label;
 @property (nonatomic, strong) IBOutlet UIButton *playButton;
 
-//#if OPENGL_RENDER_SCREE_NUM == OPENGL_RENDER_SCREE_NUM_4
-//@property (nonatomic, strong) VideoFrameExtractor *video1;
-//@property (nonatomic, strong) VideoFrameExtractor *video2;
-//@property (nonatomic, strong) VideoFrameExtractor *video3;
-//@property (nonatomic, strong) VideoFrameExtractor *video4;
-//#else
-//@property (nonatomic, strong) VideoFrameExtractor *video1;
-//@property (nonatomic, strong) VideoFrameExtractor *video2;
-//@property (nonatomic, strong) VideoFrameExtractor *video3;
-//@property (nonatomic, strong) VideoFrameExtractor *video4;
-//@property (nonatomic, strong) VideoFrameExtractor *video5;
-//@property (nonatomic, strong) VideoFrameExtractor *video6;
-//@property (nonatomic, strong) VideoFrameExtractor *video7;
-//@property (nonatomic, strong) VideoFrameExtractor *video8;
-//@property (nonatomic, strong) VideoFrameExtractor *video9;
-//@property (nonatomic, strong) VideoFrameExtractor *video10;
-//@property (nonatomic, strong) VideoFrameExtractor *video11;
-//@property (nonatomic, strong) VideoFrameExtractor *video12;
-//@property (nonatomic, strong) VideoFrameExtractor *video13;
-//@property (nonatomic, strong) VideoFrameExtractor *video14;
-//@property (nonatomic, strong) VideoFrameExtractor *video15;
-//@property (nonatomic, strong) VideoFrameExtractor *video16;
-//#endif
-
 @property (nonatomic) NSInteger FPS;
 
--(IBAction)playButtonAction:(id)sender;
-- (IBAction)showTime:(id)sender;
+-(IBAction)play1Action:(id)sender;
+-(IBAction)play2Action:(id)sender;
+-(IBAction)play4Action:(id)sender;
+
+- (IBAction)StopPlay:(id)sender;
 
 @property (strong, nonatomic) VideoFrameExtractor *viewController;
 
