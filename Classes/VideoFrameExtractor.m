@@ -12,8 +12,8 @@
 
 @interface VideoFrameExtractor (private)
 -(void)convertFrameToRGB;
--(UIImage *)imageFromAVPicture:(AVPicture)pict width:(int)width height:(int)height;
--(void)savePicture:(AVPicture)pFrame width:(int)width height:(int)height index:(int)iFrame;
+-(UIImage *)imageFromAVPicture:(AVFrame *)pFrame width:(int)width height:(int)height;
+-(void)savePicture:(AVFrame *)pFrame width:(int)width height:(int)height index:(int)iFrame;
 -(void)setupScaler;
 @end
 
@@ -62,9 +62,9 @@ enum
 }
 
 -(UIImage *)currentImage {
-	if (!pFrame->data[0]) return nil;
+	if (!pYUVFrame->data[0]) return nil;
 	[self convertFrameToRGB];
-	return [self imageFromAVPicture:picture width:outputWidth height:outputHeight];
+	return [self imageFromAVPicture:pRGBFrame width:outputWidth height:outputHeight];
 }
 
 -(double)duration {
@@ -142,7 +142,9 @@ enum
     }
 	
     // Get a pointer to the codec context for the video stream
-    pCodecCtx = pFormatCtx->streams[videoStream]->codec;
+    //pCodecCtx = pFormatCtx->streams[videoStream]->codec;
+    pCodecCtx = avcodec_alloc_context3(NULL);
+    avcodec_parameters_to_context(pCodecCtx, pFormatCtx->streams[videoStream]->codecpar);
     
     // Find the decoder for the video stream
     pCodec = avcodec_find_decoder(pCodecCtx->codec_id);
@@ -166,7 +168,7 @@ enum
     }
     
     // Allocate video frame
-    pFrame = avcodec_alloc_frame();
+    pYUVFrame = av_frame_alloc();
     
 	outputWidth = pCodecCtx->width;
 	self.outputHeight = pCodecCtx->height;
@@ -230,8 +232,9 @@ initError:
     }
 	
     // Get a pointer to the codec context for the video stream
-    pCodecCtx = pFormatCtx->streams[videoStream]->codec;
-    
+    //pCodecCtx = pFormatCtx->streams[videoStream]->codec;
+    pCodecCtx = avcodec_alloc_context3(NULL);
+    avcodec_parameters_to_context(pCodecCtx, pFormatCtx->streams[videoStream]->codecpar);
     // Find the decoder for the video stream
     pCodec = avcodec_find_decoder(pCodecCtx->codec_id);
     if(pCodec == NULL) {
@@ -246,7 +249,7 @@ initError:
     }
 	
     // Allocate video frame
-    pFrame = avcodec_alloc_frame();
+    pYUVFrame = av_frame_alloc();
 			
     av_dump_format(pFormatCtx, 0, [moviePath cStringUsingEncoding:NSASCIIStringEncoding], 0);
     
@@ -270,12 +273,20 @@ initError:
 -(void)setupScaler {
 
 	// Release old picture and scaler
-	avpicture_free(&picture);
+	av_free(pRGBFrame);
 	sws_freeContext(img_convert_ctx);	
 	
 	// Allocate RGB picture
-	avpicture_alloc(&picture, PIX_FMT_RGB24, outputWidth, outputHeight);
-	
+    pRGBFrame = av_frame_alloc();
+    av_frame_unref(pRGBFrame);
+    
+    int bytes_num = av_image_get_buffer_size(AV_PIX_FMT_RGB24, pYUVFrame->width, pYUVFrame->height, 1);
+    uint8_t* buff = (uint8_t*)av_malloc(bytes_num);
+    av_image_fill_arrays((unsigned char **)(AVFrame *)pRGBFrame->data, pRGBFrame->linesize, buff, AV_PIX_FMT_RGB24, pYUVFrame->width, pYUVFrame->height, 1);
+    pRGBFrame->width = outputWidth;
+    pRGBFrame->height = outputHeight;
+    pRGBFrame->format = AV_PIX_FMT_RGB24;
+    
 	// Setup scaler
 	static int sws_flags =  SWS_FAST_BILINEAR;
 	img_convert_ctx = sws_getContext(pCodecCtx->width, 
@@ -283,7 +294,7 @@ initError:
 									 pCodecCtx->pix_fmt,
 									 outputWidth, 
 									 outputHeight,
-									 PIX_FMT_RGB24,
+									 AV_PIX_FMT_RGB24,
 									 sws_flags, NULL, NULL, NULL);
 	
 }
@@ -299,14 +310,14 @@ initError:
 	// Free scaler
 	sws_freeContext(img_convert_ctx);	
 
-	// Free RGB picture
-	avpicture_free(&picture);
+	// Free RGB frame
+    av_free(pRGBFrame);
     
     // Free the packet that was allocated by av_read_frame
-    av_free_packet(&packet);
+    av_packet_unref(&packet);
 	
     // Free the YUV frame
-    av_free(pFrame);
+    av_free(pYUVFrame);
 	
     // Close the codec
     if (pCodecCtx) avcodec_close(pCodecCtx);
@@ -326,69 +337,74 @@ initError:
             // Decode video frame
 //            if(packet.flags==1)
 //                NSLog(@"got 1");
-            vRet = avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, &packet);
-            if(vRet<=0) NSLog(@"avcodec_decode_video2 error");
+            
+            avcodec_send_packet(pCodecCtx, &packet);
+            do {
+                vRet = avcodec_receive_frame(pCodecCtx, pYUVFrame);
+            } while(vRet==EAGAIN);
+            
+            if(vRet==0) frameFinished=1;
+            else frameFinished=0;
         }
-        av_free_packet(&packet);
+        av_packet_unref(&packet);
 		
 	}
 	return frameFinished!=0;
 }
 
--(void)convertFrameToRGB {	
-	sws_scale (img_convert_ctx, pFrame->data, pFrame->linesize,
+-(void)convertFrameToRGB {
+	sws_scale (img_convert_ctx, (const uint8_t **)pYUVFrame->data, pYUVFrame->linesize,
 			   0, pCodecCtx->height,
-			   picture.data, picture.linesize);	
+			   pRGBFrame->data, pRGBFrame->linesize);
 }
 
--(UIImage *)imageFromAVPicture:(AVPicture)pict width:(int)width height:(int)height {
-	CGBitmapInfo bitmapInfo = kCGBitmapByteOrderDefault;
-	CFDataRef data = CFDataCreateWithBytesNoCopy(kCFAllocatorDefault, pict.data[0], pict.linesize[0]*height,kCFAllocatorNull);
-	CGDataProviderRef provider = CGDataProviderCreateWithCFData(data);
-	CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-	CGImageRef cgImage = CGImageCreate(width, 
-									   height, 
-									   8, 
-									   24, 
-									   pict.linesize[0], 
-									   colorSpace, 
-									   bitmapInfo, 
-									   provider, 
-									   NULL, 
-									   NO, 
-									   kCGRenderingIntentDefault);
-	CGColorSpaceRelease(colorSpace);
-	UIImage *image = [UIImage imageWithCGImage:cgImage];
-	CGImageRelease(cgImage);
-	CGDataProviderRelease(provider);
-	CFRelease(data);
-	
-	return image;
+-(UIImage *)imageFromAVFrame:(AVFrame *)frame width:(int)width height:(int)height {
+    CGBitmapInfo bitmapInfo = kCGBitmapByteOrderDefault;
+    CFDataRef data = CFDataCreateWithBytesNoCopy(kCFAllocatorDefault, frame->data[0], frame->linesize[0]*height,kCFAllocatorNull);
+    CGDataProviderRef provider = CGDataProviderCreateWithCFData(data);
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    CGImageRef cgImage = CGImageCreate(width,
+                                       height,
+                                       8,
+                                       24,
+                                       frame->linesize[0],
+                                       colorSpace,
+                                       bitmapInfo,
+                                       provider,
+                                       NULL,
+                                       NO,
+                                       kCGRenderingIntentDefault);
+    CGColorSpaceRelease(colorSpace);
+    UIImage *image = [UIImage imageWithCGImage:cgImage];
+    CGImageRelease(cgImage);
+    CGDataProviderRelease(provider);
+    CFRelease(data);
+    
+    return image;
 }
 
--(void)savePPMPicture:(AVPicture)pict width:(int)width height:(int)height index:(int)iFrame {
+-(void)savePPMPicture:(AVFrame *)frame width:(int)width height:(int)height index:(int)iFrame {
     FILE *pFile;
-	NSString *fileName;
+    NSString *fileName;
     int  y;
-	
-	fileName = [Utilities documentsPath:[NSString stringWithFormat:@"image%04d.ppm",iFrame]];
+    
+    fileName = [Utilities documentsPath:[NSString stringWithFormat:@"image%04d.ppm",iFrame]];
     // Open file
     NSLog(@"write image file: %@",fileName);
     pFile=fopen([fileName cStringUsingEncoding:NSASCIIStringEncoding], "wb");
     if(pFile==NULL)
         return;
-	
+    
     // Write header
     fprintf(pFile, "P6\n%d %d\n255\n", width, height);
-	
+    
     // Write pixel data
     for(y=0; y<height; y++)
-        fwrite(pict.data[0]+y*pict.linesize[0], 1, width*3, pFile);
-	
+        fwrite(frame->data[0]+y*frame->linesize[0], 1, width*3, pFile);
+    
     // Close file
     fclose(pFile);
 }
-
 
 
 @end

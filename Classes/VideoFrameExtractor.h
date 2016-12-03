@@ -32,7 +32,8 @@
 //	AVCodecContext *pCodecCtx;
 //    AVFrame *pFrame;
     AVPacket packet;
-	AVPicture picture;
+	//AVPicture picture;
+    AVFrame *pRGBFrame;
 	int videoStream;
 	struct SwsContext *img_convert_ctx;
 	int sourceWidth, sourceHeight;
@@ -48,7 +49,7 @@
     
 @public
     AVCodecContext *pCodecCtx;
-    AVFrame *pFrame;
+    AVFrame *pYUVFrame;
 }
 
 /* Last decoded picture as UIImage */

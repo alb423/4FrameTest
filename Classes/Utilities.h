@@ -22,6 +22,7 @@
 #import <Foundation/Foundation.h>
 #include "libavformat/avformat.h"
 #include "libswscale/swscale.h"
+#include <libavutil/imgutils.h>
 
 @interface Utilities : NSObject {
 
